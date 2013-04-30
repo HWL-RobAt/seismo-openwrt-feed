@@ -1,0 +1,31 @@
+diff -crB boost_1_36_0.orig/libs/serialization/build/Jamfile.v2 boost_1_36_0.serialization/libs/serialization/build/Jamfile.v2
+*** boost_1_36_0.orig/libs/serialization/build/Jamfile.v2	2008-10-15 06:29:01.000000000 -0400
+--- boost_1_36_0.serialization/libs/serialization/build/Jamfile.v2	2008-10-15 07:59:10.000000000 -0400
+***************
+*** 8,15 ****
+  
+  project boost/serialization
+      : source-location ../src
+!     : requirements <dependency>../../config/test/all//BOOST_NO_STD_LOCALE
+!       <conditional>@include-spirit
+  ;
+  
+  SPIRIT_ROOT = [ modules.peek : SPIRIT_ROOT ] ;
+--- 8,14 ----
+  
+  project boost/serialization
+      : source-location ../src
+!     : requirements <conditional>@include-spirit
+  ;
+  
+  SPIRIT_ROOT = [ modules.peek : SPIRIT_ROOT ] ;
+***************
+*** 100,106 ****
+      : $(WSOURCES).cpp boost_serialization 
+      :     
+      <toolset>msvc:<cxxflags>/Gy 
+-     <dependency>../../config/test/all//BOOST_NO_STD_WSTREAMBUF
+      <link>shared:<define>BOOST_SERIALIZATION_DYN_LINK=1
+      ;
+  
+--- 99,104 ----

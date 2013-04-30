@@ -1,0 +1,3 @@
+#!/bin/sh
+
+jamvm -Xbootclasspath:/usr/share/jamvm/classes.zip:/usr/local/classpath/share/classpath/glibj.zip -Xmx8Mb $*

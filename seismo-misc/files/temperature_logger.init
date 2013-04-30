@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+
+start () {
+        /usr/bin/temperature_logger.py &
+}
+
+stop () {
+        killall temperature_logger.py
+}
+
+

@@ -1,0 +1,8 @@
+#!/bin/sh
+# This file is for tinc startup
+
+### setup a unique IP, then uncomment
+### see also tinc-down
+# ip addr add dev $INTERFACE 192.168.200.XXX/24 broadcast 192.168.200.255
+# ip link set dev $INTERFACE up
+

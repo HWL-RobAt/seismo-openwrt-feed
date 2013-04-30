@@ -1,0 +1,20 @@
+--- thrift-0.7.0.orig/configure	2011-08-11 15:19:24.000000000 +0200
++++ thrift-0.7.0/configure	2011-09-30 15:48:46.000000000 +0200
+@@ -20384,7 +20384,7 @@
+ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ ac_compiler_gnu=$ac_cv_c_compiler_gnu
+-
++cross_compiling=0
+                               if test "$cross_compiling" = yes; then :
+   { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+@@ -25771,7 +25771,7 @@
+ ac_config_headers="$ac_config_headers config.h:config.hin"
+ 
+ 
+-ac_config_files="$ac_config_files Makefile compiler/cpp/Makefile compiler/cpp/version.h lib/Makefile lib/cpp/Makefile lib/cpp/test/Makefile lib/cpp/thrift-nb.pc lib/cpp/thrift-z.pc lib/cpp/thrift.pc lib/c_glib/Makefile lib/c_glib/thrift_c_glib.pc lib/c_glib/test/Makefile lib/csharp/Makefile lib/erl/Makefile lib/erl/src/thrift.app.src lib/hs/Makefile lib/java/Makefile lib/js/test/Makefile lib/perl/Makefile lib/perl/test/Makefile lib/php/Makefile lib/py/Makefile lib/rb/Makefile test/Makefile test/cpp/Makefile test/hs/Makefile test/py/Makefile test/py.twisted/Makefile test/rb/Makefile"
++ac_config_files="$ac_config_files Makefile compiler/cpp/Makefile compiler/cpp/version.h lib/Makefile lib/cpp/Makefile lib/cpp/thrift-nb.pc lib/cpp/thrift-z.pc lib/cpp/thrift.pc lib/c_glib/Makefile lib/c_glib/thrift_c_glib.pc lib/c_glib/test/Makefile lib/csharp/Makefile lib/erl/Makefile lib/erl/src/thrift.app.src lib/hs/Makefile lib/java/Makefile lib/js/test/Makefile lib/perl/Makefile lib/perl/test/Makefile lib/php/Makefile lib/py/Makefile lib/rb/Makefile test/Makefile test/cpp/Makefile test/hs/Makefile test/py/Makefile test/py.twisted/Makefile test/rb/Makefile"
+ 
+ 
+ cat >confcache <<\_ACEOF

@@ -1,0 +1,21 @@
+--- berlinroofnet.orig/configurations/main/meshnode.click	2007-09-24 16:08:33.000000000 +0200
++++ berlinroofnet/configurations/main/meshnode.click	2007-09-24 16:08:52.000000000 +0200
+@@ -34,12 +34,12 @@
+   
+   
+   // include compounds
+-	include(ap.click);
+-	include(dsr.click);
+-	include(services.click);
+-	include(dht.click);
+-	include(iapp.click);
+-	include(vlan-class.click);
++include(ap.click);
++include(dsr.click);
++include(services.click);
++include(dht.click);
++include(iapp.click);
++include(vlan-class.click);
+   
+   // network addresses
+   //AddressInfo(my_wlan $eth_dev:eth);

@@ -1,0 +1,118 @@
+#!/bin/sh
+#
+# This script mounts /dev/sda4 under /data and creates it beforehand if it doesn't exist
+# (on first boot)
+# only works if we are running from CF card (so /dev/sda exists) and not on nfsboot
+# called by /etc/init.d/boot
+
+
+
+    # Are we running with CF card (check for /dev/sda) ?
+    if [ -b /dev/sda ] 
+    then	
+	    #skipping awk (cause it works) and blkid (cause its alternative path is given) busybox mount is working as intended and
+	    #seems to be required for nfs functionality
+	    for i in $(which fdisk) $(which mkfs.ext2) $(which e2fsck) 
+	    do
+		if [ $(ls -lisa $i | grep  busybox | wc -l) -gt 0 ]
+		then
+			echo "$i is symlink to busybox...which won't work..."
+			echo "mount_data_partition aborted."
+			exit -2
+		#else maybe we should find alternative fdisk, e2fsck, mount ... installations and use them.
+		fi
+	    done
+
+        # Does /dev/sda4 exist ? (if not first boot, create it)
+        if [ ! -b /dev/sda4 ] 
+        then
+		if [ ! -b /dev/sda3 ]
+		then
+            		logger -t mount_data_partition Creating /dev/sda3 and /dev/sda4
+            		echo "mount_data_partition: Creating /dev/sda3 and /dev/sda4 "
+            		fdisk /dev/sda <<EOF
+n
+p
+3
+
++110M
+n
+p
+4
+
+
+w
+EOF
+reboot
+		else
+			logger -t mount_data_partition removing /dev/sda3
+            		echo "mount_data_partition: removing /dev/sda3"
+            		fdisk /dev/sda <<EOF
+d
+3
+w
+EOF
+reboot
+		fi
+
+	else
+		DATA_FS_4=$(/usr/sbin/blkid | awk '/sda4/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
+		DATA_FS_3=$(/usr/sbin/blkid | awk '/sda3/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
+		if [ "$DATA_FS_3" != "ext2" ]
+		then
+			echo "mount_data_partition: Creating Ext2 on /dev/sda3"
+			mkfs.ext2 /dev/sda3
+		else
+			echo "already ext2 on /dev/sda3"
+		fi
+			
+		if [ "$DATA_FS_4" != "ext2" ]
+		then
+		#logger -t mount_data_partition Creating Ext2 on /dev/sda4a
+			echo "mount_data_partition: Creating Ext2 on /dev/sda4"
+			mkfs.ext2 /dev/sda4
+			echo "mount_data_partition: Mounting /dev/sda4 to /data"
+		        mkdir -p /data
+		        mount -t ext2 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+		else
+		        #logger -t mount_data_partition Mounting /dev/sda4
+			#maybe first remount ro to perform fsck(?)
+			echo "Starting Filesystemcheck..."
+			if [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda2" ]
+			then
+				FLAG=$(mount | awk '/\/dev\/root/{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				mount -o remount,ro /dev/root /
+				e2fsck -p /dev/root
+				mount -o remount,$FLAG /dev/root /
+				e2fsck -p /dev/sda3
+				e2fsck -p /dev/sda4
+			elif [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda3" ]
+			then
+				FLAG=$(mount | awk '/\/dev\/root/{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				mount -o remount,ro /dev/root /
+				e2fsck -p /dev/root
+				mount -o remount,$FLAG /dev/root /
+				e2fsck -p /dev/sda2
+				e2fsck -p /dev/sda4
+			fi
+			echo "...Filesystems checked."
+			echo "mount_data_partition: Mounting /dev/sda4 to /data"
+	        	mkdir -p /data
+			mount -t ext2 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+			if [ $? == 0 ] 
+			then 	
+				killall syslogd
+				syslogd -s 512 -O /data/syslogd.log 2>&1
+				if [ $? == 0 ]
+				then
+					echo "syslogd started ... logfile: /data/syslogd.log "
+				else
+					echo "couldn't start syslogd ... but /data is mounted" 
+				fi
+			else 
+				echo "could not mount /data ... so syslogd is currently not writing to file"
+			fi
+
+		fi
+	fi
+   fi

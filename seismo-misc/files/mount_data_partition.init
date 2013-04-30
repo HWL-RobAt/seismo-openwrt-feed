@@ -1,0 +1,11 @@
+#!/bin/sh /etc/rc.common
+
+START=11
+STOP=97
+
+start () {
+        # Mount the data partition
+        /sbin/mount_data_partition >/dev/kmsg 2>&1
+}
+
+

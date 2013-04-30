@@ -1,0 +1,15 @@
+--- berlinroofnet.orig/ipkg/files/berlinroofnet.config	2007-09-25 10:37:36.000000000 +0200
++++ berlinroofnet/ipkg/files/berlinroofnet.config	2007-09-25 10:39:15.000000000 +0200
+@@ -1,10 +1,10 @@
+ # Copyright (C) 2007 BerlinRoofNet Lab
+ # $Id: berlinroofnet.config 301 2007-06-01 11:45:16Z jeschke $
+ 
+-CONFIG_BRN_CHANNEL=1               # WiFi channel (will be used twice:
++CONFIG_BRN_CHANNEL=8               # WiFi channel (will be used twice:
+                                    #                 "iwconfig ath0 channel $channel" and
+                                    #                 inside click config for beacon frames)
+-CONFIG_BRN_ESSID=BerlinRoofNet     # ESSID used by click
++CONFIG_BRN_ESSID=SeismoBRN         # ESSID used by click
+ 
+ # CONFIG_GATEWAY_MAC=00:11:22:33:44:55
+ 

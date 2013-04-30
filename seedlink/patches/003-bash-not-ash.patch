@@ -1,0 +1,11 @@
+--- seiscomp/acquisition/src/seedlink/seedlink.cc.orig	2007-11-07 13:51:35.000000000 +0100
++++ seiscomp/acquisition/src/seedlink/seedlink.cc	2007-11-07 13:51:52.000000000 +0100
+@@ -89,7 +89,7 @@
+ const char *const LOG_STREAM        = "LOG";
+ const char *const INFO_STREAM       = "INF";
+ const char *const ERROR_STREAM      = "ERR";
+-const char *const SHELL             = "/bin/sh";
++const char *const SHELL             = "/bin/bash";
+ 
+ const char *const ident_str = "SeedLink v" MYVERSION;
+ 

@@ -1,0 +1,16 @@
+#! /bin/sh
+
+ECJ_JAR=`dirname $0`/ecj.jar
+ECJ_MAIN=org.eclipse.jdt.internal.compiler.batch.Main
+JAVA_EXEC=java
+JAVA_OPTS=-Xmx512M
+
+case $CLASSPATH in
+  *${ECJ_JAR}*) ;;
+  *) CLASSPATH=${CLASSPATH:+$CLASSPATH:}${ECJ_JAR}
+esac
+export CLASSPATH
+
+echo "####### CLASSPATH: ${CLASSPATH}"
+
+exec ${JAVA_EXEC} ${JAVA_OPTS} ${ECJ_MAIN} ${1+"$@"}

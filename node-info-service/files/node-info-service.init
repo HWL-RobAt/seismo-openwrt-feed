@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+start() {
+	/usr/bin/node-info-service &
+}
+
+stop() {
+	killall node-info-service
+}
+

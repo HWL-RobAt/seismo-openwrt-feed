@@ -1,0 +1,38 @@
+#!/bin/sh
+#
+# This script determines if the Sensor/SensorBoard is at /dev/ttyUSB0 or /dev/ttyUSB1,
+# sets the right parameters for the sensor-device (baudrate etc.) and forwards
+# the raw serialdata to a local port.
+# Sensorboard has a baudrate of 115200 and system default baudrate seems to be 9600.
+# So we're just guessing that the serialline with a baudrate of 115200 is the sensorboard
+
+S2P_PORT="54321"			# port which the serialdata is forwarded to by socat
+S2P_DEV=""
+S2P_BAUD="2400"				# baudrate 
+S2P_STOPBIT="-cstopb"		# cstopb for 2 stopbits and -cstopb for 1
+S2P_PARITY="-parodd"		# parodd for odd parity and -parodd for even
+S2P_DATA_BITS="cs7"			# cs7 for 7bit characters and cs8 for 8bit ...
+S2P_HANDSHAKE="-crtscts" 	# crtscts to enable handshake -crtscts to disable handshake
+
+
+	USB_PORT=$(cat /proc/bus/usb/devices | grep -B4 "USB Serial Converter" | grep -o "\(Port=..\)" | awk '{dev = sub(/Port=0/,"",$1); print $dev}')
+
+	if [ $USB_PORT=="1" ]
+	then 
+		S2P_DEV="/dev/ttyUSB1"
+	else
+		S2P_DEV="/dev/ttyUSB0"
+	fi
+
+	if [ -c /dev/ttyUSB0 ]
+	then	
+		if [[ ! -c /dev/ttyUSB1 ]]
+		then	
+			echo "Only sensorboard attached..."
+		else 
+			echo "Sensor located at $S2P_DEV"
+			stty -F $S2P_DEV $S2P_BAUD $S2P_DATA_BITS $S2P_STOPBIT parenb $S2P_PARITY $S2P_HANDSHAKE
+			echo "Sensor parameters set... starting serial forwarding to Port $S2P_PORT"
+			socat -U tcp-l:$S2P_PORT,fork $S2P_DEV,raw,echo=0 
+		fi	
+	fi

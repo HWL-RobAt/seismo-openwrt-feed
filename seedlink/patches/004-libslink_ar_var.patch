@@ -1,0 +1,14 @@
+Common subdirectories: seiscomp.orig/acquisition/src/libslink/doc and seiscomp/acquisition/src/libslink/doc
+Common subdirectories: seiscomp.orig/acquisition/src/libslink/example and seiscomp/acquisition/src/libslink/example
+diff -u seiscomp.orig/acquisition/src/libslink/Makefile seiscomp/acquisition/src/libslink/Makefile
+--- seiscomp.orig/acquisition/src/libslink/Makefile	2008-07-06 18:35:27.000000000 +0200
++++ seiscomp/acquisition/src/libslink/Makefile	2008-07-06 18:36:54.000000000 +0200
+@@ -23,7 +23,7 @@
+ dynamic: $(LIB_DYN)
+ 
+ $(LIB_A): $(LIB_OBJS)
+-	ar -rcs $(LIB_A) $(LIB_OBJS)
++	$(AR) -rcs $(LIB_A) $(LIB_OBJS)
+ 
+ $(LIB_SO): $(LIB_OBJS)
+ 	$(CC) -shared -Wl,-soname -Wl,$(LIB_SO_ALIAS) -o $(LIB_SO) $(LIB_OBJS)

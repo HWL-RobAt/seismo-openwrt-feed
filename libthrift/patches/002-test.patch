@@ -1,0 +1,11 @@
+--- thrift-0.7.0.orig/lib/cpp/Makefile.am	2011-08-11 15:19:01.000000000 +0200
++++ thrift-0.7.0/lib/cpp/Makefile.am	2011-09-30 15:32:22.000000000 +0200
+@@ -17,7 +17,7 @@
+ # under the License.
+ #
+ 
+-SUBDIRS = . test
++SUBDIRS = . 
+ 
+ pkgconfigdir = $(libdir)/pkgconfig
+ 

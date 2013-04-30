@@ -1,0 +1,4 @@
+- Rev 11054 - https://svn.openwrt.org/openwrt/packages/net/ntpd
+
+
+

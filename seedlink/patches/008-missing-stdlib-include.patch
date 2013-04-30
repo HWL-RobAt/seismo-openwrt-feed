@@ -1,0 +1,10 @@
+--- seiscomp.orig/acquisition/src/libslutils/confbase.cc	2005-07-26 21:28:46.000000000 +0200
++++ seiscomp/acquisition/src/libslutils/confbase.cc	2011-03-30 10:58:18.000000000 +0200
+@@ -11,6 +11,7 @@
+  * version. For more information, see http://www.gnu.org/
+  *****************************************************************************/
+ 
++#include <stdlib.h>
+ #include <iostream>
+ #include <string>
+ #include <map>

@@ -1,0 +1,15 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+start() {
+	cd /data/
+	/usr/bin/alarming-protocol $1 $2 >>/data/alarming-protocol.log 2>>/data/alarming-protocol.errlog &
+}
+
+stop() {
+	killall alarming-protocol
+	killall -9 alarming-protocol
+}
+

@@ -1,0 +1,7 @@
+Address = 192.168.4.101
+TCPonly = yes
+-----BEGIN RSA PUBLIC KEY-----
+MIGJAoGBAM8vgBj+KeUJVoWxZhaM4a/+QWd/4khEmXbyECYUHfIQNfkLwGm8OmMw
+eOfxGvnAhzrkcnaUy30I1/6KrYWnFWXMIClSbY6andUMPVFhL2taKtbPS8aHfx/d
+qehHqgnnNa7ZwNexm4h3d7+yaCBjX3RwJYF2ygIYQOQtnSK+63hxAgMBAAE=
+-----END RSA PUBLIC KEY-----

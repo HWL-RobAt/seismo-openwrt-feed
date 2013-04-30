@@ -1,0 +1,8 @@
+#!/bin/sh
+
+### setup a unique IP for tunnel, then uncomment
+### see also tinc-up
+# ip link set $INTERFACE down
+# ip addr del 192.168.200.XXX dev $INTERFACE
+
+

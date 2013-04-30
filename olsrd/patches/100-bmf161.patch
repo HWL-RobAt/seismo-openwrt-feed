@@ -1,0 +1,599 @@
+diff -Naur olsrd-0.5.6-orig/lib/bmf/Makefile olsrd-0.5.6/lib/bmf/Makefile
+--- olsrd-0.5.6-orig/lib/bmf/Makefile	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/lib/bmf/Makefile	2008-07-26 16:52:53.000000000 +0200
+@@ -34,7 +34,7 @@
+ 
+ OLSRD_PLUGIN =	true
+ PLUGIN_NAME =	olsrd_bmf
+-PLUGIN_VER =	1.5.3
++PLUGIN_VER =	1.6.1
+ 
+ TOPDIR = ../..
+ include $(TOPDIR)/Makefile.inc
+diff -Naur olsrd-0.5.6-orig/lib/bmf/README_BMF.txt olsrd-0.5.6/lib/bmf/README_BMF.txt
+--- olsrd-0.5.6-orig/lib/bmf/README_BMF.txt	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/lib/bmf/README_BMF.txt	2008-07-26 16:53:20.000000000 +0200
+@@ -1,6 +1,6 @@
+ BASIC MULTICAST FORWARDING PLUGIN FOR OLSRD
+-by Erik Tromp (erik.tromp@nl.thalesgroup.com, erik_tromp@hotmail.com)
+-Version 1.5.3
++by Erik Tromp (eriktromp@users.sourceforge.net, erik_tromp@hotmail.com)
++Version 1.6.1
+ 
+ 1. Introduction
+ ---------------
+@@ -17,14 +17,14 @@
+ 2. How to build and install
+ ---------------------------
+ 
+-Download the olsr-bmf-v1.5.3.tar.gz file and save it into your OLSRD
++Download the olsr-bmf-v1.6.1.tar.gz file and save it into your OLSRD
+ base install directory.
+ 
+ Change directory (cd) to your OLSRD base install directory.
+ 
+ At the command prompt, type:
+ 
+-  tar -zxvf ./olsr-bmf-v1.5.3.tar.gz
++  tar -zxvf ./olsr-bmf-v1.6.1.tar.gz
+ 
+ then type:
+ 
+@@ -47,7 +47,7 @@
+ To configure BMF in OLSR, you must edit the file /etc/olsrd.conf
+ to load the BMF plugin. For example, add the following lines:
+ 
+-  LoadPlugin "olsrd_bmf.so.1.5.3"
++  LoadPlugin "olsrd_bmf.so.1.6.1"
+   {
+     # No PlParam entries required for basic operation
+   }
+@@ -63,8 +63,8 @@
+ 
+ Look at the output; it should list the BMF plugin, e.g.:
+ 
+-  ---------- LOADING LIBRARY olsrd_bmf.so.1.5.3 ----------
+-  OLSRD Basic Multicast Forwarding (BMF) plugin 1.5.3 (Feb 24 2008 17:58:02)
++  ---------- LOADING LIBRARY olsrd_bmf.so.1.6.1 ----------
++  OLSRD Basic Multicast Forwarding (BMF) plugin 1.6.1 (Jul 22 2008 10:45:12)
+     (C) Thales Communications Huizen, Netherlands
+     Erik Tromp (eriktromp@users.sourceforge.net)
+   Checking plugin interface version:  5 - OK
+@@ -74,7 +74,7 @@
+   "NonOlsrIf"/"eth0"... NonOlsrIf: OK
+   Running plugin_init function...
+   OLSRD Basic Multicast Forwarding (BMF) plugin: opened 5 sockets
+-  ---------- LIBRARY olsrd_bmf.so.1.5.3 LOADED ----------
++  ---------- LIBRARY olsrd_bmf.so.1.6.1 LOADED ----------
+ 
+ 
+ 4. How to check if it works
+@@ -189,7 +189,7 @@
+ The following gives an overview of all plugin parameters that can be
+ configured:
+ 
+-  LoadPlugin "olsrd_bmf.so.1.5.3"
++  LoadPlugin "olsrd_bmf.so.1.6.1"
+   {
+     # Specify the name of the BMF network interface.
+     # Defaults to "bmf0".
+@@ -343,7 +343,7 @@
+ interfaces one by one as "NonOlsrIf" parameters in the BMF plugin section
+ of /etc/olsrd.conf. For example:
+ 
+-  LoadPlugin "olsrd_bmf.so.1.5.3"
++  LoadPlugin "olsrd_bmf.so.1.6.1"
+   {
+     # Non-OLSR interfaces to participate in the multicast flooding
+     PlParam     "NonOlsrIf"  "eth2"
+@@ -401,7 +401,7 @@
+ the BMF network interface, by editing the /etc/olsrd.conf file.
+ For example:
+ 
+-  LoadPlugin "olsrd_bmf.so.1.5.3"
++  LoadPlugin "olsrd_bmf.so.1.6.1"
+   {
+       PlParam "BmfInterfaceIp" "10.10.10.4/24"
+   }
+@@ -539,6 +539,15 @@
+ 10. Version history
+ -------------------
+ 
++22 July 2008: Version 1.6.1
++
++* Introduced a mutex for safe access to the OLSR data by the BMF thread.
++
++4 July 2008: Version 1.6
++
++* Fixed a bug in the CreateInterface() function: missing initialization
++  of newIf->next to NULL.
++
+ 24 February 2008: Version 1.5.3
+ 
+ * Fixed a bug so that dying or dead end edges are not taken into account.
+diff -Naur olsrd-0.5.6-orig/lib/bmf/src/Bmf.c olsrd-0.5.6/lib/bmf/src/Bmf.c
+--- olsrd-0.5.6-orig/lib/bmf/src/Bmf.c	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/lib/bmf/src/Bmf.c	2008-07-26 16:54:08.000000000 +0200
+@@ -60,11 +60,11 @@
+ #include "defs.h" /* olsr_cnf, OLSR_PRINTF */
+ #include "ipcalc.h"
+ #include "olsr.h" /* olsr_printf */
+-#include "scheduler.h" /* olsr_start_timer() */
+ #include "mid_set.h" /* mid_lookup_main_addr() */
+ #include "mpr_selector_set.h" /* olsr_lookup_mprs_set() */
+ #include "link_set.h" /* get_best_link_to_neighbor() */
+ #include "net_olsr.h" /* ipequal */
++#include "scheduler.h" /* olsr_mutex */
+ 
+ /* BMF includes */
+ #include "NetworkInterfaces.h" /* TBmfInterface, CreateBmfNetworkInterfaces(), CloseBmfNetworkInterfaces() */
+@@ -130,7 +130,7 @@
+ {
+   union olsr_ip_addr* result;
+ 
+-  /* TODO: mid_lookup_main_addr() is not thread-safe! */
++  /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+   result = mid_lookup_main_addr(ip);
+   if (result == NULL)
+   {
+@@ -290,7 +290,9 @@
+   struct ip* ipHeader; /* The IP header inside the captured IP packet */
+   u_int32_t crc32;
+   struct TEncapHeader* encapHdr;
++#ifndef NODEBUG
+   struct ipaddr_str srcBuf, dstBuf;
++#endif
+   ipHeader = GetIpHeader(encapsulationUdpData);
+ 
+   dst.v4 = ipHeader->ip_dst;
+@@ -370,15 +372,15 @@
+   encapHdr->crc32 = htonl(crc32);
+ 
+   /* Check if the frame is captured on an OLSR interface from an OLSR neighbor.
+-   * TODO1: get_best_link_to_neighbor() is not thread-safe.
+-   * TODO2: get_best_link_to_neighbor() may be very CPU-expensive, a simpler call
++   * Assumption: olsr_mutex has been grabbed for safe access to OLSR data.
++   * TODO: get_best_link_to_neighbor() may be very CPU-expensive, a simpler call
+    * would do here (something like 'get_any_link_to_neighbor()'). */
+   isFromOlsrNeighbor =
+     (isFromOlsrIntf /* The frame is captured on an OLSR interface... */
+     && get_best_link_to_neighbor(origIp) != NULL); /* ...from an OLSR neighbor */ 
+ 
+-  /* Check with OLSR if I am MPR for that neighbor */
+-  /* TODO: olsr_lookup_mprs_set() is not thread-safe! */
++  /* Check with OLSR if I am MPR for that neighbor.
++   * Assumption: olsr_mutex has been grabbed for safe access to OLSR data. */
+   iAmMpr = olsr_lookup_mprs_set(origIp) != NULL;
+ 
+   /* Check with each network interface what needs to be done on it */
+@@ -437,7 +439,9 @@
+       {
+         /* Case 1.1 */
+         {
++#ifndef NODEBUG
+           struct ipaddr_str buf;
++#endif
+           OLSR_PRINTF(
+             8,
+             "%s: --> not encap-forwarding on \"%s\": I am not selected as MPR by neighbor %s\n",
+@@ -612,7 +616,9 @@
+   struct TEncapHeader* encapsulationHdr;
+   u_int16_t encapsulationUdpDataLen;
+   struct TBmfInterface* walker;
++#ifndef NODEBUG
+   struct ipaddr_str mcSrcBuf, mcDstBuf, forwardedByBuf, forwardedToBuf;
++#endif
+   /* Are we talking to ourselves? */
+   if (if_ifwithaddr(forwardedBy) != NULL)
+   {
+@@ -710,8 +716,8 @@
+     }
+   } /* if (EtherTunTapFd >= 0) */
+ 
+-  /* Check if I am MPR for the forwarder */
+-  /* TODO: olsr_lookup_mprs_set() is not thread-safe! */
++  /* Check if I am MPR for the forwarder.
++   * Assumption: olsr_mutex has been grabbed for safe access to OLSR data. */
+   iAmMpr = (olsr_lookup_mprs_set(MainAddressOf(forwardedBy)) != NULL);
+ 
+   /* Compose destination address for next hop */
+@@ -891,7 +897,9 @@
+ 
+     else /* walker->olsrIntf != NULL && !iAmMpr */
+     {
++#ifndef NODEBUG
+       struct ipaddr_str buf;
++#endif
+       /* 'walker' is an OLSR interface, but I am not selected as MPR. In that
+        * case, don't forward. */
+       OLSR_PRINTF(
+@@ -926,7 +934,9 @@
+   struct ip* ipHeader;
+   u_int32_t crc32;
+   struct TEncapHeader* encapHdr;
++#ifndef NODEBUG
+   struct ipaddr_str srcIpBuf, dstIpBuf;
++#endif
+   ipPacket = GetIpPacket(encapsulationUdpData);
+   ipPacketLen = GetIpTotalLength(ipPacket);
+   ipHeader = GetIpHeader(encapsulationUdpData);
+@@ -1079,6 +1089,9 @@
+   {
+     struct TBmfInterface* walker;
+ 
++    /* Guarantee safe access to OLSR data */
++    pthread_mutex_lock(&olsr_mutex);
++
+     /* Check if a packet was received on the capturing socket (if any)
+      * of each network interface */
+     for (walker = BmfInterfaces; walker != NULL; walker = walker->next)
+@@ -1349,6 +1362,10 @@
+         } /* if (nBytes < ... */
+       } /* if (nBytes < 0) */
+     } /* if (nFdBitsSet > 0 && ... */
++
++    /* Release safe access to OLSR data */
++    pthread_mutex_unlock(&olsr_mutex);
++
+   } /* while (nFdBitsSet > 0) */
+ } /* DoBmf */
+ 
+diff -Naur olsrd-0.5.6-orig/lib/bmf/src/Bmf.h olsrd-0.5.6/lib/bmf/src/Bmf.h
+--- olsrd-0.5.6-orig/lib/bmf/src/Bmf.h	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/lib/bmf/src/Bmf.h	2008-07-26 16:54:17.000000000 +0200
+@@ -45,7 +45,7 @@
+ /* BMF plugin data */
+ #define PLUGIN_NAME "OLSRD Basic Multicast Forwarding (BMF) plugin"
+ #define PLUGIN_NAME_SHORT "OLSRD BMF"
+-#define PLUGIN_VERSION "1.5.3 (" __DATE__ " " __TIME__ ")"
++#define PLUGIN_VERSION "1.6.1 (" __DATE__ " " __TIME__ ")"
+ #define PLUGIN_COPYRIGHT "  (C) Thales Communications Huizen, Netherlands"
+ #define PLUGIN_AUTHOR "  Erik Tromp (eriktromp@users.sourceforge.net)"
+ #define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION "\n" PLUGIN_COPYRIGHT "\n" PLUGIN_AUTHOR
+diff -Naur olsrd-0.5.6-orig/lib/bmf/src/NetworkInterfaces.c olsrd-0.5.6/lib/bmf/src/NetworkInterfaces.c
+--- olsrd-0.5.6-orig/lib/bmf/src/NetworkInterfaces.c	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/lib/bmf/src/NetworkInterfaces.c	2008-07-26 16:56:41.000000000 +0200
+@@ -430,8 +430,11 @@
+   {
+     struct link_entry* walker;
+ 
++    /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+     OLSR_FOR_ALL_LINK_ENTRIES(walker) {
++#ifndef NODEBUG
+       struct ipaddr_str buf;
++#endif
+       union olsr_ip_addr* neighborMainIp;
+ 
+       /* Consider only links from the specified interface */
+@@ -453,7 +456,9 @@
+        * passed IP addresses (if passed). Rely on short-circuit boolean evaluation. */
+       if (source != NULL && ipequal(neighborMainIp, MainAddressOf(source)))
+       {
++#ifndef NODEBUG
+         struct ipaddr_str buf;
++#endif
+         OLSR_PRINTF(
+           9,
+           "%s: ----> Not forwarding to %s: is source of pkt\n",
+@@ -466,7 +471,9 @@
+       /* Rely on short-circuit boolean evaluation */
+       if (forwardedBy != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedBy)))
+       {
++#ifndef NODEBUG
+         struct ipaddr_str buf;
++#endif
+         OLSR_PRINTF(
+           9,
+           "%s: ----> Not forwarding to %s: is the node that forwarded the pkt\n",
+@@ -479,7 +486,9 @@
+       /* Rely on short-circuit boolean evaluation */
+       if (forwardedTo != NULL && ipequal(neighborMainIp, MainAddressOf(forwardedTo)))
+       {
++#ifndef NODEBUG
+         struct ipaddr_str buf;
++#endif
+         OLSR_PRINTF(
+           9,
+           "%s: ----> Not forwarding to %s: is the node to which the pkt was forwarded\n",
+@@ -531,10 +540,12 @@
+       }
+     }
+ 
+-    /* TODO: get_link_set() is not thread-safe! */
++    /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+     for (walker = get_link_set(); walker != NULL; walker = walker->next) 
+     {
++#ifndef NODEBUG
+       struct ipaddr_str buf;
++#endif
+       union olsr_ip_addr* neighborMainIp;
+       struct link_entry* bestLinkToNeighbor;
+       struct tc_entry* tcLastHop;
+@@ -615,7 +626,7 @@
+       /* If the candidate neighbor is best reached via another interface, then skip 
+        * the candidate neighbor; the candidate neighbor has been / will be selected via that
+        * other interface.
+-       * TODO: get_best_link_to_neighbor() is not thread-safe. */
++       * Assumption: olsr_mutex has been grabbed for safe access to OLSR data. */
+       bestLinkToNeighbor = get_best_link_to_neighbor(&walker->neighbor_iface_addr);
+ 
+       if (walker != bestLinkToNeighbor)
+@@ -646,7 +657,9 @@
+ 
+       if (forwardedBy != NULL)
+       {
++#ifndef NODEBUG
+         struct ipaddr_str forwardedByBuf, niaBuf;
++#endif
+         OLSR_PRINTF(
+           9,
+           "%s: ----> 2-hop path from %s via me to %s will cost %5.2f\n",
+@@ -662,13 +675,13 @@
+        * neighbor, because the 'forwardedBy' node will forward the packet. */
+       if (forwardedBy != NULL)
+       {
+-        /* TODO: olsr_lookup_tc_entry() is not thread-safe. */
++        /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+         tcLastHop = olsr_lookup_tc_entry(MainAddressOf(forwardedBy));
+         if (tcLastHop != NULL)
+         {
+           struct tc_edge_entry* tc_edge;
+ 
+-          /* TODO: olsr_lookup_tc_edge() is not thread-safe. */
++          /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+           tc_edge = olsr_lookup_tc_edge(tcLastHop, MainAddressOf(&walker->neighbor_iface_addr));
+           
+           /* We are not interested in dead-end or dying edges. */
+@@ -730,8 +743,11 @@
+       }
+     }
+ 
++    /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+     OLSR_FOR_ALL_LINK_ENTRIES(walker) {
++#ifndef NODEBUG
+       struct ipaddr_str buf;
++#endif
+       union olsr_ip_addr* neighborMainIp;
+       struct link_entry* bestLinkToNeighbor;
+       struct tc_entry* tcLastHop;
+@@ -794,7 +810,7 @@
+       /* Calculate the link quality (ETX) of the link to the found neighbor */
+       currEtx = walker->linkcost;
+  
+-      if (currEtx < LINK_COST_BROKEN)
++      if (currEtx >= LINK_COST_BROKEN)
+       {
+         OLSR_PRINTF(
+           9,
+@@ -816,14 +832,16 @@
+       /* If the candidate neighbor is best reached via another interface, then skip 
+        * the candidate neighbor; the candidate neighbor has been / will be selected via that
+        * other interface.
+-       * TODO: get_best_link_to_neighbor() is not thread-safe. */
++       * Assumption: olsr_mutex has been grabbed for safe access to OLSR data. */
+       bestLinkToNeighbor = get_best_link_to_neighbor(&walker->neighbor_iface_addr);
+ 
+       if (walker != bestLinkToNeighbor)
+       {
+         if (bestLinkToNeighbor == NULL)
+         {
++#ifndef NODEBUG
+           struct ipaddr_str buf;
++#endif
+           OLSR_PRINTF(
+             9,
+             "%s: ----> Not forwarding to %s: no link found\n",
+@@ -870,13 +888,13 @@
+        * neighbor, because the 'forwardedBy' node will forward the packet. */
+       if (forwardedBy != NULL)
+       {
+-        /* TODO: olsr_lookup_tc_entry() is not thread-safe. */
++        /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+         tcLastHop = olsr_lookup_tc_entry(MainAddressOf(forwardedBy));
+         if (tcLastHop != NULL)
+         {
+           struct tc_edge_entry* tc_edge;
+ 
+-          /* TODO: olsr_lookup_tc_edge() is not thread-safe. */
++          /* Assumption: olsr_mutex has been grabbed for safe access to OLSR data */
+           tc_edge = olsr_lookup_tc_edge(tcLastHop, MainAddressOf(&walker->neighbor_iface_addr));
+ 
+           /* We are not interested in dead-end edges. */
+@@ -938,7 +956,9 @@
+   }
+   else
+   {
++#ifndef NODEBUG
+     struct ipaddr_str buf;
++#endif
+     OLSR_PRINTF(
+       9,
+       "%s: ----> %d neighbors found on \"%s\"; best neighbor to forward to: %s\n",
+@@ -1493,6 +1513,7 @@
+   if (BmfInterfaces == NULL)
+   {
+     /* First TBmfInterface object in list */
++    newIf->next = NULL;
+     BmfInterfaces = newIf;
+     LastBmfInterface = newIf;
+   }
+@@ -1656,7 +1677,7 @@
+  * Input      : none
+  * Output     : none
+  * Return     : none
+- * Data Used  : none
++ * Data Used  : BmfInterfaces, LastBmfInterface
+  * Notes      : Closes
+  *              - the local EtherTunTap interface (e.g. "tun0" or "tap0")
+  *              - for each BMF-enabled interface, the socket used for
+@@ -1737,6 +1758,7 @@
+   }
+ 
+   BmfInterfaces = NULL;
++  LastBmfInterface = NULL;
+ 
+   olsr_printf(1, "%s: closed %d sockets\n", PLUGIN_NAME_SHORT, nClosed);
+ 
+diff -Naur olsrd-0.5.6-orig/src/main.c olsrd-0.5.6/src/main.c
+--- olsrd-0.5.6-orig/src/main.c	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/src/main.c	2008-07-26 16:46:14.000000000 +0200
+@@ -109,12 +109,17 @@
+   struct if_config_options *default_ifcnf;
+   char conf_file_name[FILENAME_MAX];
+   struct tms tms_buf;
++#ifndef NODEBUG
+   struct ipaddr_str buf;
++#endif
+ #ifdef WIN32
+   WSADATA WsaData;
+-  size_t len;
++  int len;
+ #endif
+ 
++  /* Grab the mutex as quickly as possible */
++  pthread_mutex_lock(&olsr_mutex);
++
+   /* paranoia checks */
+   assert(sizeof(olsr_u8_t) == 1);
+   assert(sizeof(olsr_u16_t) == 2);
+@@ -180,9 +185,9 @@
+   if (len == 0 || conf_file_name[len - 1] != '\\')
+     conf_file_name[len++] = '\\';
+   
+-  strscpy(conf_file_name + len, "olsrd.conf", sizeof(conf_file_name) - len);
++  strcpy(conf_file_name + len, "olsrd.conf");
+ #else
+-  strscpy(conf_file_name, OLSRD_GLOBAL_CONF_FILE, sizeof(conf_file_name));
++  strncpy(conf_file_name, OLSRD_GLOBAL_CONF_FILE, FILENAME_MAX);
+ #endif
+ 
+   if ((argc > 1) && (strcmp(argv[1], "-f") == 0)) 
+@@ -202,7 +207,7 @@
+ 	  exit(EXIT_FAILURE);
+ 	}
+ 		 
+-      strscpy(conf_file_name, argv[1], sizeof(conf_file_name));
++      strncpy(conf_file_name, argv[1], FILENAME_MAX);
+       argv++; argc--;
+ 
+     }
+@@ -268,7 +273,7 @@
+ #endif
+ 
+   /*
+-   * socket for ioctl calls
++   *socket for icotl calls
+    */
+   olsr_cnf->ioctl_s = socket(olsr_cnf->ip_version, SOCK_DGRAM, 0);
+   if (olsr_cnf->ioctl_s < 0) {
+@@ -285,9 +290,6 @@
+   fcntl(olsr_cnf->rtnl_s, F_SETFL, O_NONBLOCK);
+ #endif
+ 
+-/*
+- * create routing socket
+- */
+ #if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
+   olsr_cnf->rts = socket(PF_ROUTE, SOCK_RAW, 0);
+   if (olsr_cnf->rts < 0) {
+diff -Naur olsrd-0.5.6-orig/src/scheduler.c olsrd-0.5.6/src/scheduler.c
+--- olsrd-0.5.6-orig/src/scheduler.c	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/src/scheduler.c	2008-07-31 12:01:03.000000000 +0200
+@@ -71,6 +71,10 @@
+ /* Statistics */
+ unsigned int timers_running;
+ 
++/* Mutex between OLSR thread and any other threads accessing
++ * OLSR data structures */
++pthread_mutex_t olsr_mutex;
++
+ 
+ /**
+  * Sleep until the next scheduling interval.
+@@ -96,6 +100,9 @@
+   time_used.tv_sec = milliseconds_used / MSEC_PER_SEC;
+   time_used.tv_usec = (milliseconds_used % MSEC_PER_SEC) * USEC_PER_MSEC;
+ 
++  /* While sleeping, other threads may use the OLSR data */
++  pthread_mutex_unlock(&olsr_mutex);
++
+   if (timercmp(&time_used, &next_interval, <)) {
+     timersub(&next_interval, &time_used, &sleeptime_val);
+ 
+@@ -105,6 +112,9 @@
+     while (nanosleep(&sleeptime_spec, &remainder_spec) < 0)
+       sleeptime_spec = remainder_spec;
+   }
++
++  /* Grab the mutex as soon as we wake up again */
++  pthread_mutex_lock(&olsr_mutex);
+ }
+ 
+ /**
+@@ -713,3 +723,38 @@
+  * c-basic-offset: 2
+  * End:
+  */
++
++
++#ifdef WIN32
++
++/*
++ * Windows pthread_mutex compat stuff
++ */
++int pthread_mutex_init(HANDLE *Hand, void *Attr)
++{
++  *Hand = CreateMutex(NULL, FALSE, NULL);
++
++  if (*Hand == NULL)
++    return -1;
++
++  return 0;
++}
++
++int pthread_mutex_lock(HANDLE *Hand)
++{
++  if (WaitForSingleObject(*Hand, INFINITE) == WAIT_FAILED)
++    return -1;
++
++  return 0;
++}
++
++int pthread_mutex_unlock(HANDLE *Hand)
++{
++  if (!ReleaseMutex(*Hand))
++    return -1;
++
++  return 0;
++}
++
++#endif 
++
+diff -Naur olsrd-0.5.6-orig/src/scheduler.h olsrd-0.5.6/src/scheduler.h
+--- olsrd-0.5.6-orig/src/scheduler.h	2008-09-09 14:50:56.000000000 +0200
++++ olsrd-0.5.6/src/scheduler.h	2008-07-26 16:52:27.000000000 +0200
+@@ -46,6 +46,24 @@
+ 
+ #include "common/list.h"
+ 
++#ifndef WIN32
++#include <pthread.h> /* PTHREAD_MUTEX_INITIALIZER, pthread_mutex_lock, pthread_mutex_unlock */
++
++#else
++#include <windows.h>
++
++typedef HANDLE pthread_mutex_t;
++
++int pthread_mutex_init(HANDLE *Hand, void *Attr);
++int pthread_mutex_lock(HANDLE *Hand);
++int pthread_mutex_unlock(HANDLE *Hand);
++
++#endif
++
++/* Mutex between OLSR thread and any other threads accessing
++ * OLSR data structures */
++extern pthread_mutex_t olsr_mutex;
++
+ #define TIMER_WHEEL_SLOTS 256
+ #define TIMER_WHEEL_MASK (TIMER_WHEEL_SLOTS - 1)
+ 

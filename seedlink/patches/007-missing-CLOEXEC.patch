@@ -1,0 +1,52 @@
+--- seiscomp.orig/acquisition/src/seedlink/iosystem.cc (revision 354)
++++ seiscomp/acquisition/src/seedlink/iosystem.cc (working copy)
+@@ -47,6 +47,7 @@
+ 
+ #include "iosystem.h"
+ #include "monitor.h"
++#include "confbase.h"
+ #include "cppstreams.h"
+ #include "utils.h"
+ #include "descriptor.h"
+@@ -70,6 +71,7 @@
+ using namespace std;
+ using namespace SeedlinkMonitor;
+ using namespace CPPStreams;
++using namespace CfgParser;
+ using namespace Utilities;
+ 
+ // Conflicts with definition in libslink.h
+@@ -95,6 +97,9 @@
+ inline int _fdrealloc(int fd)
+   {
+ #ifdef FD_REALLOC
++    if(fd < 0)
++        return fd;
++
+     int newfd = -1;
+     bit_ffc(fd_bitmap, (FD_REALLOC_LIMIT - FD_SETSIZE), &newfd);
+ 
+@@ -121,19 +126,19 @@
+ inline int xopen(const char *pathname, int flags)
+   {
+     int fd;
+-    if((fd = open(pathname, flags)) >= 0)
++    if((fd = _fdrealloc(open(pathname, flags))) >= 0)
+         fcntl(fd, F_SETFD, FD_CLOEXEC);
+ 
+-    return _fdrealloc(fd);
++    return fd;
+   }
+ 
+ inline int xcreat(const char *pathname, mode_t mode)
+   {
+     int fd;
+-    if((fd = creat(pathname, mode)) >= 0)
++    if((fd = _fdrealloc(creat(pathname, mode))) >= 0)
+         fcntl(fd, F_SETFD, FD_CLOEXEC);
+ 
+-    return _fdrealloc(fd);
++    return fd;
+   }
+ 
+ inline int xclose(int fd)

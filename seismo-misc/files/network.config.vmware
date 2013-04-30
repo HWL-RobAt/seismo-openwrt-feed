@@ -1,0 +1,26 @@
+# Copyright (C) 2006 OpenWrt.org
+
+config interface loopback
+	option ifname	lo
+	option proto	static
+	option ipaddr	127.0.0.1
+	option netmask	255.0.0.0
+
+# For DHCP (standard)
+config interface lan
+	option ifname	eth0
+	option proto	dhcp
+
+config interface lan1
+		option ifname	eth1
+		option proto	dhcp
+
+# Example for static configuration
+#config interface lan
+#	option ifname	eth0
+#	option proto	static
+#	option ipaddr	139.17.3.30
+#	option netmask	255.255.255.0
+#	option gateway	139.17.3.1
+
+

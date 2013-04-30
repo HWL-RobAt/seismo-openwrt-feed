@@ -1,0 +1,15 @@
+Only in seiscomp/acquisition/src/libslplugin/: libslplugin.a
+diff -u seiscomp.orig/acquisition/src/libslplugin/Makefile seiscomp/acquisition/src/libslplugin/Makefile
+--- seiscomp.orig/acquisition/src/libslplugin/Makefile	2008-07-06 18:35:27.000000000 +0200
++++ seiscomp/acquisition/src/libslplugin/Makefile	2008-07-06 18:57:54.000000000 +0200
+@@ -15,7 +15,7 @@
+ .PHONY: all depend clean
+ 
+ libslplugin.a: $(CXX_OBJ) $(CC_OBJ)
+-	ar -cr $@ $+
++	$(AR) -cr $@ $+
+ 
+ $(CXX_OBJ): %.o: %.cc
+ 	$(CXX) $(CXXFLAGS) -I$(SLUTILSDIR) -I$(QDIR) -c $< -o $@
+Only in seiscomp/acquisition/src/libslplugin/: plugin_channel.o
+Only in seiscomp/acquisition/src/libslplugin/: plugin.o

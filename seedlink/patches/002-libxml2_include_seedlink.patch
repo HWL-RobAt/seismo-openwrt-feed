@@ -1,0 +1,14 @@
+diff -Nurd seiscomp.orig/acquisition/src/seedlink/Makefile seiscomp/acquisition/src/seedlink/Makefile
+--- seiscomp.orig/acquisition/src/seedlink/Makefile	2007-05-29 13:54:56.000000000 +0200
++++ seiscomp/acquisition/src/seedlink/Makefile	2007-05-29 13:56:26.000000000 +0200
+@@ -7,8 +7,8 @@
+ QDIR   = $(BASEDIR)/qlib2
+ QLIB   = $(QDIR)/libqlib2.a
+ 
+-XML_INCL := $(shell xml2-config --cflags)
+-XML_LIBS := $(shell xml2-config --libs)
++XML_INCL = $(shell xml2-config --cflags)
++XML_LIBS = $(shell xml2-config --libs)
+ 
+ CONFIG_FILE  = /home/sysop/config/seedlink.ini
+ 

@@ -1,0 +1,13 @@
+#!/bin/sh /etc/rc.common
+
+START=99
+STOP=10
+
+start() {
+	/usr/sbin/network-status-service &
+}
+
+stop() {
+	killall network-status-service
+}
+

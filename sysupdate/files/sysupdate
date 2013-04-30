@@ -1,0 +1,383 @@
+#!/bin/sh 
+#
+# This script will take the generated rootfs tarball and kernel from ./bin/x86
+# creates the md5sums of those files and all this will be tared and gzipped. 
+#
+#	!!! script hs to be executed in openwrt build root directory !!!
+#	./package/sysupdate/files/sysupdate createpkg
+#	
+#	or
+#	
+#	./ownpackage/sysupdate/files/sysupdate createpkg (if not activated via menuconfig)
+#
+
+WRT_BIN_DIR="./bin/x86"
+ROOTFS="openwrt-x86-generic-rootfs.tar.gz"
+KERNEL="openwrt-x86-generic-vmlinuz"
+SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
+
+ cleanup()
+ {	
+	if [ "$(ls -1 /data | grep menu.lst)" != "" ]
+	then
+		rm /data/menu.lst*
+	fi
+	if [ -f /mnt/sysupdate_root/$ROOTFS ]
+	then
+		rm /mnt/sysupdate_root/$ROOTFS
+	fi
+	if [ -f /mnt/sysupdate_root/$KERNEL ]
+	then
+		rm /mnt/sysupdate_root/$KERNEL
+	fi
+	if [ -f /mnt/sysupdate_root/md5sums.src ]
+	then
+		rm /mnt/sysupdate_root/md5sums.src
+	fi
+	cd /data
+	if [ -d /mnt/sysupdate_boot ]
+	then
+		if [ "$(mount | grep /mnt/sysupdate_boot)" != "" ]
+		then
+			for i in "$(mount | grep /mnt/sysupdate_boot | awk '{print $1}')"
+			do
+				umount $i
+				if [ "$?" != "0" ]
+				then
+					echo "umounting /mnt/sysupdate_boot failed"
+				fi
+			done
+		fi
+		rm -r /mnt/sysupdate_boot
+	fi
+	
+	if [ -d /mnt/sysupdate_root ]
+	then
+		if [ "$(mount | grep /mnt/sysupdate_root)" != "" ]
+		then
+			for i in "$(mount | grep /mnt/sysupdate_root | awk '{print $1}')"
+			do
+				umount $i
+				if [ "$?" != "0" ]
+				then
+					echo "umounting /mnt/sysupdate_root failed"
+				fi
+			done
+		fi
+		rm -r /mnt/sysupdate_root
+	fi
+
+}
+
+case $1 in 
+
+	createpkg) 	if [ -s ./bin/x86/openwrt-x86-generic-rootfs.tar.gz -a -s ./bin/x86/openwrt-x86-generic-vmlinuz ]
+				then
+					if [ ! -d "$SYSUPDATE_DIR" ];
+					then
+						mkdir -p $SYSUPDATE_DIR
+					else
+						echo "removing all files from older sysupdate in $SYSUPDATE_DIR"
+						rm -rf $SYSUPDATE_DIR/*
+					fi
+					cd $WRT_BIN_DIR
+					echo -e "generating original md5sums...\c"
+					MD5_ROOTFS=$(md5sum $ROOTFS)
+					MD5_KERNEL=$(md5sum $KERNEL)
+					cd ../../
+					touch $SYSUPDATE_DIR/md5sums.src
+					echo "$MD5_ROOTFS" >> $SYSUPDATE_DIR/md5sums.src 
+					echo "$MD5_KERNEL" >> $SYSUPDATE_DIR/md5sums.src
+					echo "done"
+					echo "Copying $ROOTFS and $KERNEL  to $SYSUPDATE_DIR ..."
+					cp $WRT_BIN_DIR/$ROOTFS $SYSUPDATE_DIR
+					cp $WRT_BIN_DIR/$KERNEL $SYSUPDATE_DIR
+					cd $SYSUPDATE_DIR
+					echo -e "Checking md5sum of copied files...\c"
+					if md5sum -c md5sums.src;
+					then
+						echo -e "passed\nstarting compression...\c"
+						tar czf sysupdate.tar.gz *
+						md5sum sysupdate.tar.gz >> sysupdate.md5
+						echo "done"
+						echo -e "cleaning up temporary files...\c"
+						rm $KERNEL
+						rm $ROOTFS
+						rm md5sums.src
+						echo "done"
+						echo -e "Package created in $SYSUPDATE_DIR:\n\tsysupdate.tar.gz\n\tsysupdate.md5"				    	
+					else 
+						echo "different md5sum detected...aborted!"
+					fi
+				else
+					echo "$ROOTFS and/or $KERNEL not found...aborted!"
+				fi
+				;;
+
+	installpkg) 		echo -e "\nStarting Installation...\n\n"
+				
+				# is the update package in /data
+				if [ -f /data/sysupdate.tar.gz -a -f /data/sysupdate.md5 ]
+				then
+					echo "sysupdate-package found in /data"
+				else
+					echo "sysupdate-package not found in /data...abort"
+					exit 0
+				fi
+				
+				# First create Mountpoints
+				if [ ! -d "/mnt/sysupdate_boot" ];
+				then
+					mkdir -p /mnt/sysupdate_boot
+				else
+					cleanup
+					mkdir -p /mnt/sysupdate_boot
+				fi
+				if [ ! -d "/mnt/sysupdate_root" ];
+				then
+					mkdir -p /mnt/sysupdate_root
+				else	
+					cleanup
+					mkdir -p /mnt/sysupdate_root
+				fi
+				#check if blockdevices sda2 and sda3 exist
+				if [ -b /dev/sda2 -a -b /dev/sda3 ];
+				then
+					echo "Block-Devices sda2 and sda3 found..."
+				else
+					echo "Please check Partitiontable sda2, sda3 not found!"
+					exit 0
+				fi
+				echo -e "Trying to mount /dev/sda1 to /mnt/sysupdate_boot...\c"
+				if mount /dev/sda1 /mnt/sysupdate_boot
+				then	
+					#######################################################################################################################
+					# if there wasn't any sysupdate before this one we find the default kernel with its standard name vmlinuz in the boot #
+					# directory. so we have to prepare the menu.lst for further usage and rename the kernel accordingly 		      #
+					#######################################################################################################################
+					if [ $? -eq 0 ]
+					then	
+						echo "done"
+					else
+						echo "FAILED"
+					fi
+					# create copy of menu.lst with entry numbers like "# entry 0" before every line starting with "title"
+					if [ "$(grep -e#\ entry\ .$ /mnt/sysupdate_boot/boot/grub/menu.lst | wc -l)" -eq "0" ];
+					then
+						awk 'BEGIN{count=0} {if($1=="title") {print "# entry " count; count++} print $0;}' /mnt/sysupdate_boot/boot/grub/menu.lst > /data/menu.lst.tmp
+					else
+						cp /mnt/sysupdate_boot/boot/grub/menu.lst /data/menu.lst.tmp
+					fi
+					
+					#remove every failsafe entry from menu.lst.tmp
+				        if [ "$(grep -efailsafe /data/menu.lst.tmp | wc -l)" -ne "0" ];
+					then	
+						sed 's/[ \(]failsafe[^ \t]\+//' /data/menu.lst.tmp > /data/menu.lst.out 
+					else
+						cp /data/menu.lst.tmp /data/menu.lst.out
+					fi
+					
+					# parse grub/menu.lst to find out the active partition
+					DEFAULT_GRUB_ENTRY=$(awk '/^default/{print $2}' /data/menu.lst.tmp)
+					
+					#rename ./boot/vmlinuz to ./boot/vmlinuz_$DEFAULT_GRUB_ENTRY
+					if [ "$(ls -1 /mnt/sysupdate_boot/boot/ | awk 'BEGIN{found="0"}{if($1 == "vmlinuz") found="1"}END{print found}')" -eq "1" ];
+					then
+						mv /mnt/sysupdate_boot/boot/vmlinuz /mnt/sysupdate_boot/boot/vmlinuz_$DEFAULT_GRUB_ENTRY
+					fi
+					
+					#rename kernel in its menu.lst entry from standard vmlinuz to vmlinuz_$ENTRYNUMBER
+					if [ "$(grep -e#\ entry /data/menu.lst.out | wc -l)" -ne "$(grep -evmlinuz_ /data/menu.lst.out | wc -l)" ];
+					then
+						awk '{if($2 == "entry"){print $0; num = $3; getline; print $0; getline;print $0; getline; sub(/vmlinuz/,"vmlinuz_"num,$0); print $0} else print $0}' /data/menu.lst.out > /data/menu.lst.tmp
+					fi
+									
+					#the following two lines are working for 2 entrys in the grub menu.lst
+					TMP=$(grep "# entry" /data/menu.lst.tmp | wc -l)
+					INACTIVE_GRUB_ENTRY=$(expr $TMP - 1 - $DEFAULT_GRUB_ENTRY)
+
+					ACTIVE_GRUB_ENTRY=$DEFAULT_GRUB_ENTRY
+					ACTIVE_ROOT_PART="$(grep -A 4 -e"\# entry $DEFAULT_GRUB_ENTRY" /data/menu.lst.tmp | awk '/kernel/{sub(/root=/,"",$3);print $3}')"
+
+					echo "active root Partition is: $ACTIVE_ROOT_PART"
+					if [ "$ACTIVE_ROOT_PART" == "/dev/sda2" ];
+					then
+						INACTIVE_ROOT_PART="/dev/sda3"
+					elif [ "$ACTIVE_ROOT_PART" == "/dev/sda3" ]
+						then
+							INACTIVE_ROOT_PART="/dev/sda2"
+						else
+							echo -e "Unexpected partitioning of /dev/sda... \nexpecting:\n\t\tboot=sda1,\n\t\trootfs1=sda2,\n\t\trootfs2=sda3,\n\t\tdata=sda4"
+					fi
+					
+					#set the right root devices in kernel lines
+					awk -vige=$INACTIVE_GRUB_ENTRY -virp=$INACTIVE_ROOT_PART '{if($0 == "# entry "ige){print $0; getline; print $0; getline;print $0; getline; sub(/root=\/dev\/sda./,"root="irp,$0); print $0} else print $0}' /data/menu.lst.tmp > /data/menu.lst
+
+					##################################################################################################################################################
+					# menu.lst modification is now finished. the new menu.lst is now found under /data/menu.lst and remains there until the rest of the installation #
+					# is completed successfully. 															 #
+					##################################################################################################################################################
+					
+
+
+
+					#first check Filesystemtype of the unused partition	
+					if [ "$(/usr/sbin/blkid | awk -vinactive=$INACTIVE_ROOT_PART '($0 ~ inactive) {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')" != "ext2" ];
+					then
+						echo -e "Filesystem on $INACTIVE_ROOT_PART is not ext2 ... executing \"mkfs.ext2 $INACTIVE_ROOT_PART\"\n"
+						mkfs.ext2 $INACTIVE_ROOT_PART
+					else
+						e2fsck -p $INACTIVE_ROOT_PART
+					fi	
+					echo -e "Mounting $INACTIVE_ROOT_PART to /mnt/sysupdate_root...\c"
+					if mount $INACTIVE_ROOT_PART /mnt/sysupdate_root;
+					then
+						echo "DONE"
+					    	cd /data
+						if md5sum -c sysupdate.md5;
+						then
+							cd /mnt/sysupdate_root
+							echo -e "unpacking sysupdate.tar.gz...\c"
+							tar xzf /data/sysupdate.tar.gz
+							echo "DONE"
+
+							if md5sum -c md5sums.src;
+							then	
+								echo -e "md5 correct...unpacking $ROOTFS...\c" 
+								tar xzf $ROOTFS
+								echo "DONE"
+								echo -e "copying new kernel to boot-partition...\c"
+								cp $KERNEL /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY
+								echo "DONE"
+								# checking the md5sum of the kernel just copied to /mnt/sysupdate_boot/boot/
+								if [ "$(md5sum $KERNEL /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY | awk '{first=$1; getline; if(first == $1) print "1"; else print "0"}')" -eq "1" ];
+								then
+									echo "kernel md5sum-check successful"
+									echo -e "copying new menu.lst (backup in ./boot/grub/menu.lst.old)...\c"
+									mv /mnt/sysupdate_boot/boot/grub/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst.old	
+									cp /data/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst
+									echo "DONE"
+									echo -e "start cleaning up...\c"
+									cleanup
+									echo -e "System Update finished...\nTo switch to updated System type:\tsysupdate activate"
+								else
+									echo "md5sum mismatch between $KERNEL (src) and /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY (dest)"
+									cleanup
+									exit 2
+								fi
+							else
+								echo "md5sum mismatch in md5sums.src from sysupdate.tar.gz detected ... aborting"
+								cleanup
+								exit 2
+							fi
+						else
+							echo "md5sum of sysupdate.tar.gz not matching... abort"
+							cleanup
+							exit 2
+						fi
+					else
+						echo "Mounting $INACTIVE_ROOT_PART to /mnt/sysupdate_root failed!"
+						cleanup
+						exit 2
+					fi
+
+				else 
+					echo "Mounting /dev/sda1 to /mnt/sysupdate_boot failed!"
+					cleanup
+					exit 2
+				fi
+			
+			;; 
+	activate) 	
+		if [ ! -d "/mnt/sysupdate_boot" ];
+		then
+			mkdir /mnt/sysupdate_boot
+		else
+			cleanup
+			mkdir /mnt/sysupdate_boot
+		fi
+
+		if mount /dev/sda1 /mnt/sysupdate_boot;
+		then	
+			DEFAULT_GRUB_ENTRY=$(awk '/^default/{print $2}' /mnt/sysupdate_boot/boot/grub/menu.lst)
+			ACTIVE_PART=$(ls -lisa /dev/root | awk '{print $NF}')
+			TMP=$(grep "# entry" /mnt/sysupdate_boot/boot/grub/menu.lst | wc -l)
+			if [ "$TMP" -eq 2 ]
+			then
+				if [ "$(grep -A 4 -e"\# entry $DEFAULT_GRUB_ENTRY" /mnt/sysupdate_boot/boot/grub/menu.lst | awk '/kernel/{sub(/root=/,"",$3);print $3}')" = "$ACTIVE_PART" ]
+				then
+					INACTIVE_GRUB_ENTRY=$(expr $TMP - 1 - $DEFAULT_GRUB_ENTRY)
+					echo -e "Old default entry = $DEFAULT_GRUB_ENTRY\nNew default entry = $INACTIVE_GRUB_ENTRY\n=======================\n"
+					sed -e "s/^default $DEFAULT_GRUB_ENTRY/default $INACTIVE_GRUB_ENTRY/" /mnt/sysupdate_boot/boot/grub/menu.lst > /mnt/sysupdate_boot/boot/grub/menu.lst.new
+					echo "backup menu.lst to menu.lst.old" 
+					cp /mnt/sysupdate_boot/boot/grub/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst.old
+					echo "overwrite menu.lst with menu.lst.new"
+			        	mv /mnt/sysupdate_boot/boot/grub/menu.lst.new /mnt/sysupdate_boot/boot/grub/menu.lst 
+					echo "menu.lst modified, changes take effect on reboot"
+					umount /dev/sda1
+					rm -r /mnt/sysupdate_boot
+				else
+					echo "New System already activated. Use 'sysupdate deactivate' to keep current system active."
+					cleanup
+				fi
+			else
+				echo "please run 'sysupdate installpkg' first..."
+				cleanup
+			fi
+		else 
+			echo "couldn't mount /dev/sda1 to /mnt/sysupdate_boot"
+			cleanup
+		fi
+		;;
+
+	deactivate)
+		if [ ! -d "/mnt/sysupdate_boot" ];
+		then
+			mkdir /mnt/sysupdate_boot
+		else
+			cleanup
+			mkdir -p /mnt/sysupdate_boot
+		fi
+
+		if mount /dev/sda1 /mnt/sysupdate_boot;
+		then	
+			DEFAULT_GRUB_ENTRY=$(awk '/^default/{print $2}' /mnt/sysupdate_boot/boot/grub/menu.lst)
+			ACTIVE_PART=$(ls -lisa /dev/root | awk '{print $NF}')
+			TMP=$(grep "# entry" /mnt/sysupdate_boot/boot/grub/menu.lst | wc -l)
+			if [ "$TMP" -eq 2 ]
+			then
+				if [ "$(grep -A 4 -e"\# entry $DEFAULT_GRUB_ENTRY" /mnt/sysupdate_boot/boot/grub/menu.lst | awk '/kernel/{sub(/root=/,"",$3);print $3}')" != "$ACTIVE_PART" ]
+				then
+					INACTIVE_GRUB_ENTRY=$(expr $TMP - 1 - $DEFAULT_GRUB_ENTRY)
+					echo -e "Old default entry = $DEFAULT_GRUB_ENTRY\nNew default entry = $INACTIVE_GRUB_ENTRY\n=======================\n"
+					sed -e "s/^default $DEFAULT_GRUB_ENTRY/default $INACTIVE_GRUB_ENTRY/" /mnt/sysupdate_boot/boot/grub/menu.lst > /mnt/sysupdate_boot/boot/grub/menu.lst.new
+					echo "backup menu.lst to menu.lst.old" 
+					cp /mnt/sysupdate_boot/boot/grub/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst.old
+					echo "overwrite menu.lst with menu.lst.new"
+			        	mv /mnt/sysupdate_boot/boot/grub/menu.lst.new /mnt/sysupdate_boot/boot/grub/menu.lst 
+					echo "menu.lst modified, changes take effect on reboot"
+					umount /dev/sda1
+					rm -r /mnt/sysupdate_boot
+				else
+					echo "Current System already activated. Use 'sysupdate activate' to set New System active."
+					cleanup
+				fi
+			else
+				echo "please run 'sysupdate installpkg' first..."
+				cleanup
+			fi
+		else 
+			echo "couldn't mount /dev/sda1 to /mnt/sysupdate_boot"
+			cleanup
+		fi
+		;;
+	clear)
+		cleanup
+		;;	
+	*)echo -e "\n\nsysupdate v0.1\n==============\n\nUsage:\n\n      sysupdate [createpkg|installpkg|activate|deactivate]\n\nCreate a Package:\n\nTo Create a sysupdate package which can be installed on remote SOSEWIN-Nodes you need to\nexecute the following in the Root-Directory of your Seismo-OpenWRT Build-Environment:\n\n      sysupdate createpkg\n      (maybe ./package/sysupdate/files/sysupdate createpkg)\n\nThe Files sysupdate.tar.gz and sysupdate.md5 will be created. Both need to be uploaded to \n'/data' on the remote node.\n\nInstalling a Package:\n\nWe assume sysupdate.tar.gz and sysupdate.md5 are located in '/data' on the remote node. \nTo install the Package just execute:\n\n      sysupdate installpkg\n\nSwitching from current Root-Partition to new one:\n\n      sysupdate activate\n\nUndo the last switch of Root-Partitions:\n\n      sysupdate deactivate\n\nThank you, and GOOD LUCK"'!'"\n\n"
+		    ;;
+
+ 
+ esac
+
+

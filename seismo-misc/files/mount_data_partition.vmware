@@ -1,0 +1,72 @@
+#!/bin/sh
+#
+# This script mounts /dev/hda3 under /data and creates it beforehand if it doesn't exist
+# (on first boot)
+# only works if we are running from CF card (so /dev/hda exists) and not on nfsboot
+# called by /etc/init.d/boot
+
+
+
+    # Are we running with CF card (check for /dev/hda) ?
+    if [ -b /dev/hda ] 
+    then
+        # Does /dev/hda3 exist ? (if not first boot, create it)
+        if [ ! -b /dev/hda3 ] 
+        then
+            logger -t mount_data_partition Creating /dev/hda3
+            echo "mount_data_partition: Creating /dev/hda3"
+            fdisk /dev/hda <<EOF
+n
+p
+3
+
+
+w
+EOF
+            # /dev/hda3 now created with fidsk, run partprobe to get it immediatly
+            partprobe /dev/hda
+            sleep 5
+            # Now make the filesystem
+            mkfs.ext2 /dev/hda3
+        fi
+
+        # /dev/hda3 existed already or was just created, so mount it now
+        logger -t mount_data_partition Mounting /dev/hda3
+        echo "mount_data_partition: Mounting /dev/hda3"
+        mkdir -p /data
+        e2fsck -p /dev/hda3
+        mount -t ext2 -o rw,noatime,errors=remount-ro /dev/hda3 /data
+
+    fi
+
+	   # Are we running in VMWare (check for /dev/hdc) ?
+	    if [ -b /dev/hdc ] 
+	    then
+	        # Does /dev/hdc1 exist ? (if not first boot, create it)
+	        if [ ! -b /dev/hdc1 ] 
+	        then
+	            logger -t mount_data_partition Creating /dev/hdc1
+	            echo "mount_data_partition: Creating /dev/hdc1"
+	            fdisk /dev/hdc <<EOF
+n
+p
+1
+
+
+w
+EOF
+	            # /dev/hdc1 now created with fidsk, run partprobe to get it immediatly
+	            partprobe /dev/hdc
+	            sleep 5
+	            # Now make the filesystem
+	            mkfs.ext2 /dev/hdc1
+	        fi
+
+	        # /dev/hda3 existed already or was just created, so mount it now
+	        logger -t mount_data_partition Mounting /dev/hdc1
+	        echo "mount_data_partition: Mounting /dev/hdc1"
+	        mkdir -p /data
+	        e2fsck -p /dev/hdc1
+	        mount -t ext2 -o rw,noatime,errors=remount-ro /dev/hdc1 /data
+
+	    fi

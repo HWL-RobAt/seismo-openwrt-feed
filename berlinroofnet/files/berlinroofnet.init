@@ -1,0 +1,31 @@
+#!/bin/sh /etc/rc.common
+# Copyright (C) 2007 BerlinRoofNet Lab
+# $Id: berlinroofnet.init 130 2007-01-23 13:08:29Z jeschke $
+
+: ${BRNLIBDIR:=$BRNROOT/lib/berlinroofnet}
+[ -f $BRNLIBDIR/BrnNodeFunctions.sh ] || { echo "Can't find \"BrnNodeFunctions.sh\""; exit 1; }
+. $BRNLIBDIR/BrnNodeFunctions.sh
+
+start () {
+	[ -f $BRNROOT/etc/config/berlinroofnet ] && . $BRNROOT/etc/config/berlinroofnet
+
+	KillAllClickProcesses
+
+	LoadWifiDrivers
+	# Default: channel == 10, if nothing was set in /etc/config/berlinroofnet
+	: ${CHANNEL:=$(config_get BRN CHANNEL)}
+	SetWifiDrivers monitor $CHANNEL
+
+	LoadNetSyslogd
+
+	#killall logserver 2>&-
+	: ${ESSID:=$(config_get BRN ESSID)}
+	#CLICK_BIN_PATH=$BRNROOT/brn/meshnode/userlevel/main CLICK_BIN_PATH=$BRNROOT/brn/meshnode/userlevel LoadClick userlevel main.click $CHANNEL $ESSID
+	LoadClick userlevel main.click $CHANNEL $ESSID
+
+	#LoadHttpRedirect
+}
+
+stop() {
+	KillAllClickProcesses
+}

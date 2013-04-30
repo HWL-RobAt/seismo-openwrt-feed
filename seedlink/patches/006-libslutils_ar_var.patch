@@ -1,0 +1,14 @@
+Common subdirectories: seiscomp.orig/acquisition/src/libslutils/examples and seiscomp/acquisition/src/libslutils/examples
+Common subdirectories: seiscomp.orig/acquisition/src/libslutils/flex and seiscomp/acquisition/src/libslutils/flex
+diff -u seiscomp.orig/acquisition/src/libslutils/Makefile seiscomp/acquisition/src/libslutils/Makefile
+--- seiscomp.orig/acquisition/src/libslutils/Makefile	2008-07-06 18:35:27.000000000 +0200
++++ seiscomp/acquisition/src/libslutils/Makefile	2008-07-06 19:01:29.000000000 +0200
+@@ -11,7 +11,7 @@
+ .PHONY: all depend clean
+ 
+ libslutils.a: $(OBJS)
+-	ar -cr $@ $+
++	$(AR) -cr $@ $+
+ 
+ $(OBJS): %.o: %.cc
+ 	$(CXX) $(CXXFLAGS) $(XML_INCL)  -c $< -o $@

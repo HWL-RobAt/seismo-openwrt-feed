@@ -1,0 +1,12 @@
+--- watchdog-5.4.orig/src/fstab.c	2008-07-23 17:01:17.000000000 +0200
++++ watchdog-5.4/src/fstab.c	2008-07-23 17:06:02.000000000 +0200
+@@ -239,7 +239,8 @@
+ /* Ensure that the lock is released if we are interrupted.  */
+ static void
+ handler (int sig) {
+-     die (EX_USER, "%s", sys_siglist[sig]);
++//     die (EX_USER, "%s", sys_siglist[sig]);
++     die (EX_USER, "%s", strsignal(sig));
+ }
+ 
+ static void

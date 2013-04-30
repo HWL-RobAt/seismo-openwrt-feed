@@ -1,0 +1,186 @@
+#!/bin/sh /etc/rc.common
+
+START=42
+STOP=42
+
+NETWORK=10
+NETADDRESS=10.0.0.0
+BROADCAST=10.255.255.255
+NETMASK=255.0.0.0
+NET_SLASH=8
+BSSID_A="02:CA:FF:EE:BA:BA"
+BSSID_B="02:CA:FF:EE:BA:BB"
+
+get_ip_from_mac () {
+        # e.g. "23:E1:5E  " (note the 2 spaces at the end)
+        HEXNUM=$(ifconfig $1 | grep -o -e "[[:xdigit:]]*:[[:xdigit:]]*:[[:xdigit:]]*  $")
+        # 23:E1 (just a helper)
+        FIRST_TWO_HEX=${HEXNUM%?????}
+        # 0x"5E  "
+        HEX3=0x${HEXNUM#??????}
+        # 0x23
+        HEX1=0x${HEXNUM%????????}
+        # 0xE1
+        HEX2=0x${FIRST_TWO_HEX#???}
+        # 10.x.x.x
+        IP=$(printf $NETWORK."%d.%d.%d\n" $HEX1 $HEX2 $HEX3)
+        echo $IP
+}
+
+setup_wifi0 () {
+        wlanconfig ath0 create wlandev wifi0 wlanmode ap
+
+	sysctl -w dev.wifi0.countrycode=395
+	sysctl -w dev.wifi0.outdoor=1
+
+        iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0) channel 1
+
+        ifconfig ath0 192.168.100.1 netmask 255.255.255.0 broadcast 192.168.100.255
+        dnsmasq -l /tmp/dhcp.leases --interface=ath0 -K -F 192.168.100.100,192.168.100.250,255.255.255.0,12h		
+
+        # use only main antenna connector (the one in the middle for Routerboard
+        # R32, and the one at the right side for CM9)
+        sysctl -w dev.wifi0.diversity=0
+        sysctl -w dev.wifi0.txantenna=1
+        sysctl -w dev.wifi0.rxantenna=1
+
+
+        # disable ANI, see http://madwifi.org/ticket/705
+        sysctl -w dev.wifi0.intmit=0
+        iwconfig ath0 txpower 16
+}
+
+setup_wifi1 () {
+        wlanconfig ath1 create wlandev wifi1 wlanmode ahdemo
+
+	sysctl -w dev.wifi1.countrycode=395
+	sysctl -w dev.wifi1.outdoor=1
+
+	iwconfig ath1 essid SeismoOLSR channel 34 frag off rts off ap $BSSID_B
+
+        # WEP encryption for OLSR interfaces
+        iwconfig ath1 key s:olsrchan1
+
+        ifconfig ath1 $(get_ip_from_mac ath0) netmask $NETMASK broadcast $BROADCAST
+        route del -net "$NETADDRESS"/$NET_SLASH ath1
+
+        # use only main antenna connector (the one in the middle for Routerboard
+        # R32, and the one at the right side for CM9)
+        sysctl -w dev.wifi1.diversity=0
+        sysctl -w dev.wifi1.txantenna=1
+        sysctl -w dev.wifi1.rxantenna=1
+
+        # disable ANI, see http://madwifi.org/ticket/705
+        sysctl -w dev.wifi1.intmit=0
+        iwconfig ath1 txpower 18
+}
+
+
+dnat_node(){
+# Arg1: Nodenum
+# Arg2: IP
+    SSHPORT=$(expr "21000" "+" $1)
+    SEEDLINKPORT=$(expr "22000" "+" $1)
+    TXTINFOPORT=$(expr "23000" "+" $1)
+
+    iptables -t nat -A PREROUTING -p tcp --dport $SSHPORT -j DNAT --to $2:22
+    iptables -t nat -A PREROUTING -p tcp --dport $SEEDLINKPORT -j DNAT --to $2:18000
+    iptables -t nat -A PREROUTING -p tcp --dport $TXTINFOPORT -j DNAT --to $2:2007
+}
+
+# This function setups DNAT to make ssh and seedlink directlry available at the gateway
+# together with a SNAT because external IPs are not known how to route out.
+# For every node in the network destination nat, number accordings to Ingos table, so node x ssh will be available at
+# gateways port 21000+x, seedlink at 22000+x
+
+setup_dnats() {
+    # For every node in the network destination nat
+
+    dnat_node	1	10.12.133.193
+}
+
+
+setup_iptables() {
+
+    # Only accept traffic from (see http://www.db.ripe.net/whois):
+    # 130.133.1.46 (komma.zedat.fu-berlin.de)
+    # 141.20.0.0/16 (HUB net)
+    # 139.17.0.0/16 (GFZ net)
+    # 193.140.203.145/32 (kandili)
+    
+    # accept network-status-service on port 80 (custom for node behind firewall) and 8080 (default) 
+    iptables -A INPUT -i eth0 -p tcp --dport 80 -j ACCEPT
+    iptables -A INPUT -i eth0 -p tcp --dport 8080 -j ACCEPT
+
+    # accept ssh connection from everywhrere
+    iptables -A INPUT -i eth0 -p tcp --dport 22 -j ACCEPT
+
+    iptables -A INPUT -i eth0 -s 130.133.1.46/32 -j ACCEPT
+    iptables -A INPUT -i eth0 -s 141.20.0.0/16 -j ACCEPT
+    iptables -A INPUT -i eth0 -s 139.17.0.0/16 -j ACCEPT
+    iptables -A INPUT -i eth0 -s 193.140.203.145/32 -j ACCEPT
+    iptables -A INPUT -i eth0 -s 192.168.0.0/16 -j ACCEPT
+#    iptables -A INPUT -i eth0 -s 0/0 -j DROP
+
+    iptables -A FORWARD -i eth0 -s 130.133.1.46/32 -j ACCEPT
+    iptables -A FORWARD -i eth0 -s 141.20.0.0/16 -j ACCEPT
+    iptables -A FORWARD -i eth0 -s 139.17.0.0/16 -j ACCEPT
+    iptables -A FORWARD -i eth0 -s 193.140.203.145/32 -j ACCEPT
+    iptables -A FORWARD -i eth0 -s 192.168.0.0/16 -j ACCEPT
+#   iptables -A FORWARD -i eth0 -s 0/0 -j DROP
+
+
+    # Enable masquerading on outgoing "gateway" eth0 interface from inside the OLSR network
+    iptables -t nat -I POSTROUTING -o eth0 -j MASQUERADE
+    
+    # Enable masquerading for packets coming from outside into the OLSR network
+    iptables -t nat -I POSTROUTING -o ath1 -s ! 10.0.0.0/8 -j MASQUERADE
+
+    # To artificially block other nodes..  
+    #iptables -m mac -A INPUT --mac-source 00:0C:42:0C:74:18 -j DROP
+}
+
+start () {
+
+    echo "Preparing for OLSR..."
+
+    /etc/init.d/olsrd disable
+    /etc/init.d/firewall disable
+    /etc/init.d/dnsmasq disable
+
+    if ifconfig wifi1 ; then
+        setup_wifi0
+        setup_wifi1
+    elif ifconfig wifi0 ; then
+        setup_wifi0
+    fi
+
+    # Sometimes /dev/net/tun is not created properly (see #57 in sartrac), so check this here
+    # and create it before olsrd if necessary
+    if [ ! -e /dev/net/tun ]
+    then
+        logger -t olsr_or_brn "/dev/net/tun does not exist, creating it"
+        mkdir -p /dev/net
+        mknod /dev/net/tun c 10 200
+    else
+        logger -t olsr_or_brn "/dev/net/tun existed (as it should be)"
+    fi	
+	
+    olsrd -f /etc/olsrd-new.conf -nofork &
+    hostapd -B /etc/hostapd-seismo.conf
+
+    setup_iptables
+    # DNAT/SNAT setup for gateways in Istanbul testbed (uncomment following line for gateways)
+    setup_dnats
+}
+
+stop () {
+        echo "Stopping OLSR..."
+        killall olsrd
+        killall dnsmasq
+        killall hostapd
+        wlanconfig ath0 destroy
+        wlanconfig ath1 destroy
+}
+
+

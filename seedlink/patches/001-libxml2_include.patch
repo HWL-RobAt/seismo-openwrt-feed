@@ -1,0 +1,8 @@
+--- seiscomp.orig/acquisition/src/libslutils/Makefile	2007-05-29 13:32:22.000000000 +0200
++++ seiscomp/acquisition/src/libslutils/Makefile	2007-05-29 13:38:06.000000000 +0200
+@@ -1,4 +1,4 @@
+-XML_INCL := $(shell xml2-config --cflags)
++XML_INCL = $(shell xml2-config --cflags)
+ 
+ OBJS = utils.o lex.ini.o conf_xml.o confbase.o
+ 
