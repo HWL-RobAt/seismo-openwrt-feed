@@ -20,8 +20,8 @@ PKG_MD5SUM:=918a4d43eebb6d62889ecedb941c2029
 include $(INCLUDE_DIR)/package.mk
 
 define Package/olsrd/template
-  SECTION:=net
-  CATEGORY:=Network
+  SECTION:=seismo
+  CATEGORY:=Seismo
   TITLE:=OLSR (Optimized Link State Routing) daemon
   URL:=http://www.olsr.org/
   MENU:=1

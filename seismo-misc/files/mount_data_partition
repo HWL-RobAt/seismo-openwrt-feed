@@ -49,14 +49,15 @@ get_sector(){
     then	
 	    #skipping awk (cause it works) and blkid (cause its alternative path is given) busybox mount is working as intended and
 	    #seems to be required for nfs functionality
-	    for i in $(which fdisk) $(which mkfs.ext4) $(which e2fsck) 
+	    for i in $(which fdisk) $(which mkfs.ext4) $(which e2fsck) $(which blkid)
 	    do
 		if [ $(ls -lisa $i | grep  busybox | wc -l) -gt 0 ]
 		then
 			echo "$i is symlink to busybox...which won't work..."
 			echo "mount_data_partition aborted."
 			exit -2
-		#else maybe we should find alternative fdisk, e2fsck, mount ... installations and use them.
+		else
+			BLKID=$(which blkid)
 		fi
 	    done
 			START_SECTOR=$(($(get_sector)+1))	# get sector to append new partitions
@@ -96,8 +97,8 @@ reboot
 		fi
 
 	else
-		DATA_FS_4=$(/usr/sbin/blkid | awk '/sda4/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
-		DATA_FS_3=$(/usr/sbin/blkid | awk '/sda3/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
+		DATA_FS_4=$( $BLKID | awk '/sda4/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
+		DATA_FS_3=$( $BLKID | awk '/sda3/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
 		if [ "$DATA_FS_3" != "ext4" ]
 		then
 			echo "mount_data_partition: Creating Ext4 on /dev/sda3"
@@ -108,8 +109,8 @@ reboot
 			
 		if [ "$DATA_FS_4" != "ext4" ]
 		then
-		#logger -t mount_data_partition Creating Ext2 on /dev/sda4a
-			echo "mount_data_partition: Creating Ext2 on /dev/sda4"
+		#logger -t mount_data_partition Creating Ext4 on /dev/sda4a
+			echo "mount_data_partition: Creating Ext4 on /dev/sda4"
 			mkfs.ext4 /dev/sda4
 			echo "mount_data_partition: Mounting /dev/sda4 to /data"
 		        mkdir -p /data
@@ -120,18 +121,20 @@ reboot
 			echo "Starting Filesystemcheck..."
 			if [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda2" ]
 			then
-				FLAG=$(mount | awk '/\/dev\/root/{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
-				mount -o remount,ro /dev/root /
-				e2fsck -p /dev/root
-				mount -o remount,$FLAG /dev/root /
+				DEV="/dev/sda2"
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				mount -o remount,ro $DEV /
+				e2fsck -p $DEV
+				mount -o remount,$FLAG $DEV /
 				e2fsck -p /dev/sda3
 				e2fsck -p /dev/sda4
 			elif [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda3" ]
 			then
-				FLAG=$(mount | awk '/\/dev\/root/{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
-				mount -o remount,ro /dev/root /
-				e2fsck -p /dev/root
-				mount -o remount,$FLAG /dev/root /
+				DEV="/dev/sda3"
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				mount -o remount,ro $DEV /
+				e2fsck -p $DEV
+				mount -o remount,$FLAG $DEV /
 				e2fsck -p /dev/sda2
 				e2fsck -p /dev/sda4
 			fi
