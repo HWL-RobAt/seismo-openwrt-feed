@@ -22,15 +22,15 @@ include $(INCLUDE_DIR)/package.mk
 define Package/olsrd/template
   SECTION:=seismo
   CATEGORY:=Seismo
-  TITLE:=OLSR (Optimized Link State Routing) daemon
   URL:=http://www.olsr.org/
-  MENU:=1
 endef
 
 define Package/olsrd
   $(call Package/olsrd/template)
+  DEPENDS:=+libpthread
+  TITLE:=OLSR (Optimized Link State Routing) daemon
+  DEFAULT:=y
   MENU:=1
-  DEPENDS:=libpthread
 endef
 
 define Package/olsrd/conffiles
