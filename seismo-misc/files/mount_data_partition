@@ -1,13 +1,50 @@
-#!/bin/sh
+#!/bin/bash
 #
 # This script mounts /dev/sda4 under /data and creates it beforehand if it doesn't exist
 # (on first boot)
 # only works if we are running from CF card (so /dev/sda exists) and not on nfsboot
 # called by /etc/init.d/boot
 
+RPS=110 								# desired Root Partition Size in MB
+
+get_sector(){
+
+				DEV=/dev/sda	
+				TMP=$(fdisk -l $DEV | grep -e ^$DEV | grep -v [Ee]xtended  | awk '{gsub(/\*|\+/,"");print($1,$2,$3,$4)}')
+				declare -a FDATA
+				FDATA=(`echo $TMP`)
+				LNG=${#FDATA[*]}
+				declare -a P_START
+				declare -a P_END
+				declare -a P_BLKS
+				declare -a P_NAME
+
+				cnt=0;
+				for (( i=0; i<$LNG; i++ ))
+				do
+								case ${FDATA[$i]} in
+												$DEV*) { 	
+																P_NAME[$cnt]=${FDATA[$i]}
+																P_START[$cnt]=${FDATA[`expr $i + 1`]}
+																P_END[$cnt]=${FDATA[`expr $i + 2`]}
+																P_BLKS[$cnt]=${FDATA[`expr $i + 3`]}
+
+																cnt=`expr $cnt + 1`
+																};;
+												*) ;;
+								esac
+				done
+				#echo "$cnt Partitionen gefunden."
+
+				#echo -e "NAME:\t ${P_NAME[@]}"
+				#echo -e "START:\t ${P_START[@]}"
+				#echo -e "END:\t ${P_END[@]}"
+				#echo -e "BLKS:\t ${P_BLKS[@]}"
+				echo ${P_END[(($cnt-1))]}
+}
 
 
-    # Are we running with CF card (check for /dev/sda) ?
+ # Are we running with CF card (check for /dev/sda) ?
     if [ -b /dev/sda ] 
     then	
 	    #skipping awk (cause it works) and blkid (cause its alternative path is given) busybox mount is working as intended and
@@ -22,25 +59,28 @@
 		#else maybe we should find alternative fdisk, e2fsck, mount ... installations and use them.
 		fi
 	    done
-
-        # Does /dev/sda4 exist ? (if not first boot, create it)
+			START_SECTOR=$(($(get_sector)+1))	# get sector to append new partitions
+				
+	
+	# Does /dev/sda4 exist ? (if not first boot, create it)
         if [ ! -b /dev/sda4 ] 
         then
-		if [ ! -b /dev/sda3 ]
-		then
+				if [ ! -b /dev/sda3 ]
+				then
             		logger -t mount_data_partition Creating /dev/sda3 and /dev/sda4
             		echo "mount_data_partition: Creating /dev/sda3 and /dev/sda4 "
-            		fdisk /dev/sda <<EOF
+fdisk /dev/sda <<EOF
 n
 p
 3
-
-+110M
+$START_SECTOR
++${RPS}M
+p
 n
 p
-4
+$(($START_SECTOR+$RPS*2048))
 
-
+p
 w
 EOF
 reboot
