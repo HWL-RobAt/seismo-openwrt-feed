@@ -22,7 +22,7 @@ define Package/libthrift
   SECTION:=libs
   CATEGORY:=Libraries
   TITLE:=Thrift Library
-  DEPENDS:=+boost
+  DEPENDS:=+boost, +libcrypto, +libpthread, +librt , +libssl, +libstdcpp
   MAINTAINER:=Ingmar Eveslage <eveslage@informatik.hu-berlin.de>
 endef
 
