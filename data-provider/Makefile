@@ -29,7 +29,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/data-provider
   SECTION:=seismo
   CATEGORY:=Seismo
-  DEPENDS:=+kmod-usb-serial-ftdi 
+  DEPENDS:=+kmod-usb-serial-ftdi +libpthread
   TITLE:=sensorboard data reading software and SEEDLink plugin
   URL:=http://www.edim-whatever.org
   MAINTAINER:=Jens Nachtigall <nachtiga@informatik.hu-berlin.de>
