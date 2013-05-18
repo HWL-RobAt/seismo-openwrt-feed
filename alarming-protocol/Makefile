@@ -50,7 +50,7 @@ endef
 MAKE_FLAGS+=\
 	CXXFLAGS+="-DBOOST -I $(PKG_BUILD_DIR)/$(DIR_ASN1_GEN) -I $(PKG_BUILD_DIR)/$(DIR_ASN1_RUNTIME) -I $(PKG_BUILD_DIR)/$(DIR_SA)"\
 	LDFLAGS+="-L $(PKG_BUILD_DIR)/$(DIR_ASN1_GEN) -L $(PKG_BUILD_DIR)/$(DIR_ASN1_RUNTIME) -L $(PKG_BUILD_DIR)/$(DIR_SA)"\
-	LDLIBS+="$(PKG_BUILD_DIR)/$(DIR_SA)/libSA.a $(PKG_BUILD_DIR)/$(DIR_ASN1_RUNTIME)/libASN1Run.a $(PKG_BUILD_DIR)/$(DIR_ASN1_GEN)/libASN1Gen.a -lSA -lASN1Run -lASN1Gen -lpthread -lboost_regex-mt -lboost_serialization-mt -lboost_thread-mt -lboost_system-mt"
+	LDLIBS+="$(PKG_BUILD_DIR)/$(DIR_SA)/libSA.a $(PKG_BUILD_DIR)/$(DIR_ASN1_RUNTIME)/libASN1Run.a $(PKG_BUILD_DIR)/$(DIR_ASN1_GEN)/libASN1Gen.a -lSA -lASN1Run -lASN1Gen -lpthread -lboost_regex -lboost_serialization -lboost_thread -lboost_system"
 
 define Package/alarming-protocol/install
 	$(INSTALL_DIR) $(1)/usr/bin
