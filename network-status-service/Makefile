@@ -30,7 +30,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/network-status-service
   SECTION:=seismo
   CATEGORY:=Seismo
-  DEPENDS:=
+  DEPENDS:=+libstdcpp
   TITLE:=webservice to provide the actual status of the network
   MAINTAINER:=Ingmar Eveslage <eveslage@informatik.hu-berlin.de>
 endef
