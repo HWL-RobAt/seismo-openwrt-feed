@@ -30,7 +30,7 @@ include $(INCLUDE_DIR)/package.mk
 define Package/m-noti
   SECTION:=seismo
   CATEGORY:=Seismo
-  DEPENDS:=
+  DEPENDS:=+libpthread +libstdcpp
   TITLE:=Notification middleware service
   MAINTAINER:=Ingmar Eveslage <eveslage@informatik.hu-berlin.de>
 endef
