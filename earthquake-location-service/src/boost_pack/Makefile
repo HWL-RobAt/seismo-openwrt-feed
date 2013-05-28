@@ -4,7 +4,7 @@ CPPFILES := $(wildcard *.cpp)
 HFILES   := $(wildcard *.h) $(wildcard *.hpp)
 
 CFLAGS += -I ../ -I . -DNODETARGET -DBOOST -DDEBUG -g
-LDFLAGS += -lpthread -lboost_regex-mt -lboost_serialization-mt -lboost_thread-mt -lboost_system-mt
+LDFLAGS += -lpthread -lboost_regex -lboost_serialization -lboost_thread -lboost_system
 
 all: boost
 
