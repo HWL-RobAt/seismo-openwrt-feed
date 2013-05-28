@@ -19,7 +19,7 @@ define Package/seismic-analysis
   SECTION:=seimo
   CATEGORY:=Seismo
   TITLE:=seismic-analysis
-  DEPENDS:=+data-provider
+  DEPENDS:=+data-provider +libstdcpp
   MAINTAINER:=Ingmar Eveslage <eveslage@informatik.hu-berlin.de>
 endef
 
