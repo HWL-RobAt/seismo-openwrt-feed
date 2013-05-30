@@ -18,6 +18,7 @@ define Package/hello
   SECTION:=utils
   CATEGORY:=Utilities
   TITLE:=OpenWRT Hello World Package
+  DEPENDS:=+libpthread
 endef
 
 define Package/hello/description
