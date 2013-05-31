@@ -19,6 +19,7 @@ define Package/seismo-misc
   CATEGORY:=Seismo
   TITLE:=Various config files and scripts
   MAINTAINER:=Jens Nachtigall <nachtiga@informatik.hu-berlin.de>
+  DEPENDS:=+busybox
 endef
 
 define Build/Prepare
