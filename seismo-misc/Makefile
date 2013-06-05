@@ -19,7 +19,7 @@ define Package/seismo-misc
   CATEGORY:=Seismo
   TITLE:=Various config files and scripts
   MAINTAINER:=Jens Nachtigall <nachtiga@informatik.hu-berlin.de>
-  DEPENDS:=+busybox
+  DEPENDS:=+base-files
 endef
 
 define Build/Prepare
@@ -62,6 +62,7 @@ define Package/seismo-misc/install
 	$(INSTALL_DIR) $(1)/etc/dropbear/
 	$(CP) ./files/dropbear.authorized_keys $(1)/etc/dropbear/authorized_keys
 	$(CP) ./files/passwd $(1)/etc/passwd
+	$(INSTALL) -m 0600 ./files/shadow $(1)/etc/shadow
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/seismo $(1)/etc/config/seismo
 	$(CP) ./files/hostapd-seismo.conf $(1)/etc/hostapd-seismo.conf
