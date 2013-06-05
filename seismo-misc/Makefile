@@ -62,8 +62,8 @@ define Package/seismo-misc/install
 	$(INSTALL_DIR) $(1)/etc/dropbear/
 	$(CP) ./files/dropbear.authorized_keys $(1)/etc/dropbear/authorized_keys
 	$(INSTALL_DIR) $(TOPDIR)/files/etc
-	$(CP) ./files/passwd $(TOPDIR)/etc/passwd
-	$(INSTALL) -m 0600 ./files/shadow $(TOPDIR)/etc/shadow
+	$(CP) ./files/passwd $(TOPDIR)/files/etc/passwd
+	$(INSTALL) -m 0600 ./files/shadow $(TOPDIR)/files/etc/shadow
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/seismo $(1)/etc/config/seismo
 	$(CP) ./files/hostapd-seismo.conf $(1)/etc/hostapd-seismo.conf
