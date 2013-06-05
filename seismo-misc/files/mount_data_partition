@@ -122,7 +122,7 @@ reboot
 			if [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda2" ]
 			then
 				DEV="/dev/sda2"
-				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
 				mount -o remount,ro $DEV /
 				e2fsck -p $DEV
 				mount -o remount,$FLAG $DEV /
@@ -131,7 +131,7 @@ reboot
 			elif [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda3" ]
 			then
 				DEV="/dev/sda3"
-				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/,[[:print:]]+\)/,"",$6);print $6}')
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
 				mount -o remount,ro $DEV /
 				e2fsck -p $DEV
 				mount -o remount,$FLAG $DEV /
