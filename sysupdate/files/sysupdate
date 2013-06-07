@@ -12,8 +12,8 @@
 #
 
 WRT_BIN_DIR="./bin/x86"
-ROOTFS="openwrt-x86-generic-rootfs.tar.gz"
-KERNEL="openwrt-x86-generic-vmlinuz"
+ROOTFS="openwrt-x86-alix2-rootfs.tar.gz"
+KERNEL="openwrt-x86-alix2-vmlinuz"
 SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
 
  cleanup()
