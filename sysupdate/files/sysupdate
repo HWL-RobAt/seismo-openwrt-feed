@@ -4,11 +4,8 @@
 # creates the md5sums of those files and all this will be tared and gzipped. 
 #
 #	!!! script hs to be executed in openwrt build root directory !!!
-#	./package/sysupdate/files/sysupdate createpkg
+#	./package/feeds/seismo/sysupdate/files/sysupdate createpkg
 #	
-#	or
-#	
-#	./ownpackage/sysupdate/files/sysupdate createpkg (if not activated via menuconfig)
 #
 
 WRT_BIN_DIR="./bin/x86"
@@ -71,7 +68,7 @@ SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
 
 case $1 in 
 
-	createpkg) 	if [ -s ./bin/x86/openwrt-x86-generic-rootfs.tar.gz -a -s ./bin/x86/openwrt-x86-generic-vmlinuz ]
+	createpkg) 	if [ -s $ROOTFS -a -s $KERNEL ]
 				then
 					if [ ! -d "$SYSUPDATE_DIR" ];
 					then
