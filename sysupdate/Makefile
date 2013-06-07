@@ -29,6 +29,7 @@ define Build/Compile
 endef
 
 define Package/sysupdate/install
+	$(INSTALL_BIN) ./files/sysupdate $(TOPDIR)/sysupdate
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) ./files/sysupdate $(1)/sbin/sysupdate
 endef
