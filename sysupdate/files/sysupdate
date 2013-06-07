@@ -68,7 +68,7 @@ SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
 
 case $1 in 
 
-	createpkg) 	if [ -s $ROOTFS -a -s $KERNEL ]
+	createpkg) 	if [ -s $WRT_BIN_DIR/$ROOTFS -a -s $WRT_BIN_DIR/$KERNEL ]
 				then
 					if [ ! -d "$SYSUPDATE_DIR" ];
 					then
