@@ -35,8 +35,7 @@ echo "WIFI0 SETUP:"
 
 #	sysctl -w dev.wifi0.countrycode=395
 #	sysctl -w dev.wifi0.outdoor=1
-	iw dev ath0 set channel 1
-iw ath0 connect SeismoTN_$(get_ip_from_mac ath0) 2412
+iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0)
 echo "ESSID gesetzt"
         ifconfig ath0 192.168.100.1 netmask 255.255.255.0 broadcast 192.168.100.255 
 	echo "ifconfig durch"
