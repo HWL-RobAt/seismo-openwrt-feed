@@ -150,7 +150,7 @@ case $1 in
 				then	
 					#######################################################################################################################
 					# if there wasn't any sysupdate before this one we find the default kernel with its standard name vmlinuz in the boot #
-					# directory. so we have to prepare the menu.lst for further usage and rename the kernel accordingly 		      #
+					# directory. so we have to prepare the menu.lst for further usage and rename the kernel accordingly										#
 					#######################################################################################################################
 					if [ $? -eq 0 ]
 					then	
@@ -219,12 +219,18 @@ case $1 in
 
 
 					#first check Filesystemtype of the unused partition	
-					if [ "$(/usr/sbin/blkid | awk -vinactive=$INACTIVE_ROOT_PART '($0 ~ inactive) {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')" != "ext2" ];
+					if [ "$(/sbin/blkid | awk -vinactive=$INACTIVE_ROOT_PART '($0 ~ inactive) {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')" != "ext4" ];
 					then
-						echo -e "Filesystem on $INACTIVE_ROOT_PART is not ext2 ... executing \"mkfs.ext2 $INACTIVE_ROOT_PART\"\n"
-						mkfs.ext2 $INACTIVE_ROOT_PART
+						echo -e "Filesystem on $INACTIVE_ROOT_PART is not ext4 ... executing \"mkfs.ext4 $INACTIVE_ROOT_PART\"\n"
+						mkfs.ext4 $INACTIVE_ROOT_PART
 					else
-						e2fsck -p $INACTIVE_ROOT_PART
+						if [ "$(mount | grep $INACTIVE_ROOT_PART)" != "" ]
+						then 
+							umount $INACTIVE_ROOT_PART
+							e2fsck -p $INACTIVE_ROOT_PART
+						else
+							e2fsck -p $INACTIVE_ROOT_PART
+						fi
 					fi	
 					echo -e "Mounting $INACTIVE_ROOT_PART to /mnt/sysupdate_root...\c"
 					if mount $INACTIVE_ROOT_PART /mnt/sysupdate_root;
