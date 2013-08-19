@@ -241,13 +241,13 @@ case $1 in
 						then
 							cd /mnt/sysupdate_root
 							echo -e "unpacking sysupdate.tar.gz...\c"
-							tar xzf /data/sysupdate.tar.gz
+							tar mxzf /data/sysupdate.tar.gz
 							echo "DONE"
 
 							if md5sum -c md5sums.src;
 							then	
 								echo -e "md5 correct...unpacking $ROOTFS...\c" 
-								tar xzf $ROOTFS
+								tar mxzf $ROOTFS
 								echo "DONE"
 								echo -e "copying new kernel to boot-partition...\c"
 								cp $KERNEL /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY
