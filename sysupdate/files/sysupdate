@@ -12,6 +12,36 @@ WRT_BIN_DIR="./bin/x86"
 ROOTFS="openwrt-x86-alix2-rootfs.tar.gz"
 KERNEL="openwrt-x86-alix2-vmlinuz"
 SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
+ECHO=$(which echo)
+LS=$(which ls)
+GREP=$(which grep)
+RM=$(which rm)
+MOUNT=$(which mount)
+AWK=$(which awk)
+UMOUNT=$(which umount)
+MD5SUM=$(which md5sum)
+TOUCH=$(which touch)
+TAR=$(which tar)
+WC=$(which wc)
+CP=$(which cp)
+SED=$(which sed)
+MV=$(which mv)
+BLKID=$(which blkid)
+MKFS.EXT4=$(which mkfs.ext4)
+E2FSCK=$(which e2fsck)
+BIN_LIST="ECHO LS GREP RM MOUNT AWK UMOUNT MD5SUM TOUCH TAR WC CP SED MV BLKID MKFS.EXT4 E2FSCK"
+
+chk_sys()
+ {
+	for i in $BIN_LIST
+	do
+		if [ "$(eval echo \$$i)" == "" ]
+		then
+			echo "ERROR: Missing $(echo $i). Aborting."
+			exit 2
+		fi
+	done
+ }
 
  cleanup()
  {	
@@ -78,7 +108,7 @@ case $1 in
 						rm -rf $SYSUPDATE_DIR/*
 					fi
 					cd $WRT_BIN_DIR
-					echo -e "generating original md5sums...\c"
+					echo "generating original md5sums...\c"
 					MD5_ROOTFS=$(md5sum $ROOTFS)
 					MD5_KERNEL=$(md5sum $KERNEL)
 					cd ../../
@@ -90,19 +120,19 @@ case $1 in
 					cp $WRT_BIN_DIR/$ROOTFS $SYSUPDATE_DIR
 					cp $WRT_BIN_DIR/$KERNEL $SYSUPDATE_DIR
 					cd $SYSUPDATE_DIR
-					echo -e "Checking md5sum of copied files...\c"
+					echo "Checking md5sum of copied files...\c"
 					if md5sum -c md5sums.src;
 					then
-						echo -e "passed\nstarting compression...\c"
+						echo "passed\nstarting compression...\c"
 						tar czf sysupdate.tar.gz *
 						md5sum sysupdate.tar.gz >> sysupdate.md5
 						echo "done"
-						echo -e "cleaning up temporary files...\c"
+						echo "cleaning up temporary files...\c"
 						rm $KERNEL
 						rm $ROOTFS
 						rm md5sums.src
 						echo "done"
-						echo -e "Package created in $SYSUPDATE_DIR:\n\tsysupdate.tar.gz\n\tsysupdate.md5"				    	
+						echo "Package created in $SYSUPDATE_DIR:\n\tsysupdate.tar.gz\n\tsysupdate.md5"				    	
 					else 
 						echo "different md5sum detected...aborted!"
 					fi
@@ -112,7 +142,7 @@ case $1 in
 				;;
 
 	installpkg) 		echo -e "\nStarting Installation...\n\n"
-				
+				chk_sys
 				# is the update package in /data
 				if [ -f /data/sysupdate.tar.gz -a -f /data/sysupdate.md5 ]
 				then
@@ -378,7 +408,7 @@ case $1 in
 		cleanup
 		;;	
 	*)echo -e "\n\nsysupdate v0.1\n==============\n\nUsage:\n\n      sysupdate [createpkg|installpkg|activate|deactivate]\n\nCreate a Package:\n\nTo Create a sysupdate package which can be installed on remote SOSEWIN-Nodes you need to\nexecute the following in the Root-Directory of your Seismo-OpenWRT Build-Environment:\n\n      sysupdate createpkg\n      (maybe ./package/sysupdate/files/sysupdate createpkg)\n\nThe Files sysupdate.tar.gz and sysupdate.md5 will be created. Both need to be uploaded to \n'/data' on the remote node.\n\nInstalling a Package:\n\nWe assume sysupdate.tar.gz and sysupdate.md5 are located in '/data' on the remote node. \nTo install the Package just execute:\n\n      sysupdate installpkg\n\nSwitching from current Root-Partition to new one:\n\n      sysupdate activate\n\nUndo the last switch of Root-Partitions:\n\n      sysupdate deactivate\n\nThank you, and GOOD LUCK"'!'"\n\n"
-		    ;;
+chk_sys		    ;;
 
  
  esac
