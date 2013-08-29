@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [ -e /etc/init_blacklist.conf ]
+then
+    while read i
+    do
+      if [ $(ls /etc/rc.d | grep $i | wc -l) -gt 0 ]
+      then
+        /etc/init.d/$i stop
+        /etc/init.d/$i disable
+      fi
+    done < /etc/init_blacklist.conf
+fi
