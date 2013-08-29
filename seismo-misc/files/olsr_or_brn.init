@@ -10,6 +10,18 @@ NETMASK=255.0.0.0
 NET_SLASH=8
 BSSID_A="02:CA:FF:EE:BA:BA"
 BSSID_B="02:CA:FF:EE:BA:BB"
+DEV0="phy0"
+DEV1="phy1"
+
+chk_dev(){
+
+	if [ "$(lspci -k | grep ath5k | wc -l)" -lt "2" ]
+	then
+		tmp=$DEV0
+		DEV0=$DEV1
+		DEV1=$tmp
+	fi
+}
 
 get_ip_from_mac () {
         # e.g. "23:E1:5E  " (note the 2 spaces at the end)
@@ -30,7 +42,7 @@ get_ip_from_mac () {
 setup_wifi0 () {
 
 echo "WIFI0 SETUP:"
-	iw phy phy1 interface add ath0 type managed
+	iw phy $DEV0 interface add ath0 type managed
 #	wlanconfig ath0 create wlandev wifi0 wlanmode ap
 
 #	sysctl -w dev.wifi0.countrycode=395
@@ -56,7 +68,7 @@ echo "dnsmasq durch"
 
 setup_wifi1 () {
 echo "WIFI1 SETUP:"
-        iw phy phy0 interface add ath1 type ibss
+        iw phy $DEV1 interface add ath1 type ibss
 	echo "ibss Interface angelegt"
 #        wlanconfig ath1 create wlandev wifi1 wlanmode ahdemo
 
@@ -159,8 +171,8 @@ start () {
 
     /etc/init.d/olsrd disable
     /etc/init.d/firewall disable
-    /etc/init.d/dnsmasq disable
-
+    /etc/init.d/dnsmasq disable	
+    chk_dev
     ifconfig ath1 &> /dev/null
     if [ $? != 0 ]; then
         setup_wifi0
