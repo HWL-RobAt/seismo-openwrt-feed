@@ -7,6 +7,7 @@
 
 RPS=110 								# desired Root Partition Size in MB
 
+
 get_sector(){
 
 				DEV=/dev/sda	
@@ -60,7 +61,6 @@ get_sector(){
 			BLKID=$(which blkid)
 		fi
 	    done
-			START_SECTOR=$(($(get_sector)+1))	# get sector to append new partitions
 				
 	
 	# Does /dev/sda4 exist ? (if not first boot, create it)
@@ -68,6 +68,8 @@ get_sector(){
         then
 				if [ ! -b /dev/sda3 ]
 				then
+
+								START_SECTOR=$(($(get_sector)+1))	# get sector to append new partitions
             		logger -t mount_data_partition Creating /dev/sda3 and /dev/sda4
             		echo "mount_data_partition: Creating /dev/sda3 and /dev/sda4 "
 fdisk /dev/sda <<EOF
@@ -79,7 +81,7 @@ $START_SECTOR
 p
 n
 p
-$(($START_SECTOR+$RPS*2048))
+$(($START_SECTOR+1+$RPS*1000*1000/$(fdisk -l /dev/sda | grep Units | awk '{print $9}')))
 
 p
 w

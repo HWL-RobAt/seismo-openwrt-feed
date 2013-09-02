@@ -35,11 +35,16 @@ chk_sys()
  {
 	for i in $BIN_LIST
 	do
-		if [ "$(eval echo \$$i)" == "" ]
+		if [ "$(eval echo \$$i)" != "" ]
 		then
+			if [ "$(ls -lisa $(eval echo \$$i) | grep busybox)" != "" ]
+			then
+				echo "WARNING: $(eval echo \$$i) is linked to busybox. Make sure all needed features are supported."
+			fi
+		else	
 			echo "ERROR: Missing $(echo $i). Aborting."
 			exit 2
-		fi
+	fi
 	done
  }
 
