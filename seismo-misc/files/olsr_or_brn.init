@@ -43,61 +43,18 @@ setup_wifi0 () {
 
 echo "WIFI0 SETUP:"
 	iw phy $DEV0 interface add ath0 type managed
-#	wlanconfig ath0 create wlandev wifi0 wlanmode ap
-
-#	sysctl -w dev.wifi0.countrycode=395
-#	sysctl -w dev.wifi0.outdoor=1
-iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0)
-echo "ESSID gesetzt"
+	iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0)
         ifconfig ath0 192.168.100.1 netmask 255.255.255.0 broadcast 192.168.100.255 
-	echo "ifconfig durch"
         dnsmasq -l /tmp/dhcp.leases --interface=ath0 -K -F 192.168.100.100,192.168.100.250,255.255.255.0,12h		
-echo "dnsmasq durch"
-        # use only main antenna connector (the one in the middle for Routerboard
-        # R32, and the one at the right side for CM9)
- #       sysctl -w dev.wifi0.diversity=0
-  #      sysctl -w dev.wifi0.txantenna=1
-   #     sysctl -w dev.wifi0.rxantenna=1
-
-
-        # disable ANI, see http://madwifi.org/ticket/705
-  #      sysctl -w dev.wifi0.intmit=0
-#        iw dev ath0 set txpower fixed 16dBm
-#	echo "txpower = 16 gesetzt"
 }
 
 setup_wifi1 () {
-echo "WIFI1 SETUP:"
+	echo "WIFI1 SETUP:"
         iw phy $DEV1 interface add ath1 type ibss
-	echo "ibss Interface angelegt"
-#        wlanconfig ath1 create wlandev wifi1 wlanmode ahdemo
+	iwconfig ath1 essid SeismoOLSR channel 44 frag off rts off ap $BSSID_B key s:olsrchannel12
 
-#	sysctl -w dev.wifi1.countrycode=395
-#	sysctl -w dev.wifi1.outdoor=1
-#	iw ath1 connect SeismoOLSR
-#	iw ath1 set channel 36
-	echo "ibss ssid = SeismmoOLSR"
-#	iw dev ath1 set channel 34 frag off rts off ap $BSSID_B
-#	echo "iw dev ath1 set channel 34 frag off rts off ap $BSSID_B gesetzt"
-	iwconfig ath1 essid SeismoOLSR channel 36 frag off rts off ap $BSSID_B key s:olsrchannel12
-
-        # WEP encryption for OLSR interfaces
-	echo "iw dev ath1 ibss join SeismoOLSR fixed $BSSID_B keys s:olsrchan1 gerufen"
-#	iw dev ath1 ibss join SeismoOLSR 2412 $BSSID_B 0:olsrchannel12
         ifconfig ath1 $(get_ip_from_mac ath0) netmask $NETMASK broadcast $BROADCAST
         route del -net "$NETADDRESS"/$NET_SLASH ath1
-
-        # use only main antenna connector (the one in the middle for Routerboard
-        # R32, and the one at the right side for CM9)
-#        sysctl -w dev.wifi1.diversity=0
-#        sysctl -w dev.wifi1.txantenna=1
-#        sysctl -w dev.wifi1.rxantenna=1
-
-        # disable ANI, see http://madwifi.org/ticket/705
-#        sysctl -w dev.wifi1.intmit=0
-# 	iw dev ath1 set txpower fixed 18dBm
-#	echo "txpower = 18 gesetzt"
-#	iwconfig ath1 txpower 18
 }
 
 
