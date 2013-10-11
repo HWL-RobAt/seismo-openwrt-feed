@@ -35,12 +35,6 @@ get_sector(){
 												*) ;;
 								esac
 				done
-				#echo "$cnt Partitionen gefunden."
-
-				#echo -e "NAME:\t ${P_NAME[@]}"
-				#echo -e "START:\t ${P_START[@]}"
-				#echo -e "END:\t ${P_END[@]}"
-				#echo -e "BLKS:\t ${P_BLKS[@]}"
 				echo ${P_END[(($cnt-1))]}
 }
 
@@ -50,7 +44,7 @@ get_sector(){
     then	
 	    #skipping awk (cause it works) and blkid (cause its alternative path is given) busybox mount is working as intended and
 	    #seems to be required for nfs functionality
-	    for i in $(which fdisk) $(which mkfs.ext4) $(which e2fsck) $(which blkid)
+	    for i in $(which fdisk) $(which mkfs.ext3) $(which e2fsck) $(which blkid)
 	    do
 		if [ $(ls -lisa $i | grep  busybox | wc -l) -gt 0 ]
 		then
@@ -81,7 +75,7 @@ $START_SECTOR
 p
 n
 p
-$(($START_SECTOR+1+$RPS*1000*1000/$(fdisk -l /dev/sda | grep Units | awk '{print $9}')))
+$(($START_SECTOR+1+$RPS*1024*1024/$(fdisk -l /dev/sda | grep Units | awk '{print $9}')))
 
 p
 w
@@ -101,22 +95,22 @@ reboot
 	else
 		DATA_FS_4=$( $BLKID | awk '/sda4/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
 		DATA_FS_3=$( $BLKID | awk '/sda3/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
-		if [ "$DATA_FS_3" != "ext4" ]
+		if [ "$DATA_FS_3" != "ext3" ]
 		then
 			echo "mount_data_partition: Creating Ext4 on /dev/sda3"
-			mkfs.ext4 /dev/sda3
+			mkfs.ext3 /dev/sda3
 		else
-			echo "already ext4 on /dev/sda3"
+			echo "already ext3 on /dev/sda3"
 		fi
 			
-		if [ "$DATA_FS_4" != "ext4" ]
+		if [ "$DATA_FS_4" != "ext3" ]
 		then
 		#logger -t mount_data_partition Creating Ext4 on /dev/sda4a
 			echo "mount_data_partition: Creating Ext4 on /dev/sda4"
-			mkfs.ext4 /dev/sda4
+			mkfs.ext3 /dev/sda4
 			echo "mount_data_partition: Mounting /dev/sda4 to /data"
 		        mkdir -p /data
-		        mount -t ext4 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+		        mount -t ext3 -o rw,noatime,errors=remount-ro /dev/sda4 /data
 		else
 		        #logger -t mount_data_partition Mounting /dev/sda4
 			#maybe first remount ro to perform fsck(?)
@@ -143,7 +137,7 @@ reboot
 			echo "...Filesystems checked."
 			echo "mount_data_partition: Mounting /dev/sda4 to /data"
 	        	mkdir -p /data
-			mount -t ext4 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+			mount -t ext3 -o rw,noatime,errors=remount-ro /dev/sda4 /data
 			if [ $? == 0 ] 
 			then 	
 				killall syslogd
