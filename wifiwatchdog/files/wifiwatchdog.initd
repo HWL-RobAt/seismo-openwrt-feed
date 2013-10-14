@@ -4,5 +4,8 @@
 
 START=99
 start() {
-  /usr/sbin/wifiwatchdog.sh start > /dev/null 2>&1 < /dev/null &
+	if[ "$(uci get seismo.block.wifiwatchdog)" = "0"]
+	then
+		/usr/sbin/wifiwatchdog.sh start > /dev/null 2>&1 < /dev/null &
+	fi
 }

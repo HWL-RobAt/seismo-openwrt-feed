@@ -3,5 +3,8 @@
 
 START=99
 start() {
-  /sbin/startup_node_check.sh > /dev/null 2>&1 < /dev/null &
+	if[ "$(uci get seismo.block.startup_node_check)" = "0"]
+	then
+		/sbin/startup_node_check.sh > /dev/null 2>&1 < /dev/null &
+	fi
 }

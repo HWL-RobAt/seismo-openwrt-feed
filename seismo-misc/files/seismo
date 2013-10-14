@@ -1,3 +1,4 @@
+package seismo
 
 config 'network' 'network'
 	option 'net_name' 'SOSEWIN - Istanbul'
@@ -83,4 +84,9 @@ config 'logging' 'logging'
 	option 'log_to_ram' '0'
 
 config 'misc' 'misc'
-	option 'sync_interval' '60'
+	option 'sync_interval'	'60'
+
+config 'block' 'block'
+	option 'startup_node_check'	'1'
+	option 'alarming_protocol'	'1'
+	option 'wifiwatchdog'		'1'

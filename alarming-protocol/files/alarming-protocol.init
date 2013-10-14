@@ -4,12 +4,19 @@ START=99
 STOP=10
 
 start() {
-	cd /data/
-	/usr/bin/alarming-protocol $1 $2 >>/data/alarming-protocol.log 2>>/data/alarming-protocol.errlog &
+	if[ "$(uci get seismo.block.alarming_protocol)" = "0"]
+	then
+		cd /data/
+		/usr/bin/alarming-protocol $1 $2 >>/data/alarming-protocol.log 2>>/data/alarming-protocol.errlog &
+	fi
 }
 
 stop() {
-	killall alarming-protocol
-	killall -9 alarming-protocol
+	if[ "$(uci get seismo.block.alarming_protocol)" = "0"]
+	then
+		killall alarming-protocol
+		killall -9 alarming-protocol
+	fi
 }
+
 
