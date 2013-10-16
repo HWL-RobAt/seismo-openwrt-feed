@@ -54,11 +54,9 @@ define Package/seismo-misc/install
 	$(CP) ./files/kismet_ui.conf $(1)/etc/kismet/
 	$(CP) ./files/kismet_drone.conf $(1)/etc/kismet/
 	$(CP) ./files/50-madwifi $(1)/etc/modules.d/
-	$(CP) ./files/init_blacklist.conf $(1)/etc/init_blacklist.conf
 	$(INSTALL_BIN) ./files/olsr_or_brn.init $(1)/etc/init.d/olsr_or_brn
 	$(INSTALL_BIN) ./files/startup_node_check.initd $(1)/etc/init.d/startup_node_check
 	$(INSTALL_BIN) ./files/mount_data_partition.init $(1)/etc/init.d/mount_data_partition
-	$(INSTALL_BIN) ./files/init_blacklist.init $(1)/etc/init.d/init_blacklist
 	$(INSTALL_DIR) $(1)/etc/crontabs
 	$(CP) ./files/root.cron $(1)/etc/crontabs/root
 	$(INSTALL_DIR) $(1)/etc/dropbear/
@@ -75,7 +73,6 @@ define Package/seismo-misc/install
 	$(INSTALL_DIR) $(1)/sbin
 	$(INSTALL_BIN) ./files/mount_data_partition $(1)/sbin/mount_data_partition
 	$(INSTALL_BIN) ./files/startup_node_check.sh $(1)/sbin/startup_node_check.sh
-	$(INSTALL_BIN) ./files/init_blacklist $(1)/sbin/init_blacklist
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/network.config $(1)/etc/config/network
 	$(INSTALL_DIR) $(1)/usr/bin
