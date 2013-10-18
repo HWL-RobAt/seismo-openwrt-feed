@@ -1,0 +1,9 @@
+#!/bin/sh /etc/rc.common
+
+START=40
+STOP=10
+
+start() {
+        # enable gateway rule in olsrd config
+	sed -i 's/#0.0.0.0      0.0.0.0/0.0.0.0      0.0.0.0/' /etc/olsrd-new.conf
+}
