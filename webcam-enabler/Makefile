@@ -19,7 +19,7 @@ define Package/webcam-enabler
   CATEGORY:=Seismo
   TITLE:=Enables webcam support on sosewin nodes
   MAINTAINER:=Ingmar Eveslage <eveslage@informatik.hu-berlin.de>
-  DEPENDS:=+mjpg_streamer +hotplug2 -kmod-usb2
+  DEPENDS:=+mjpg-streamer +hotplug2 @(!(PACKAGE_kmod-usb2))
 endef
 
 define Build/Prepare
