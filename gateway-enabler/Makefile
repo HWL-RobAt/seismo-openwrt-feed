@@ -29,10 +29,10 @@ endef
 define Build/Compile
 endef
 
-define Package/webcam-enabler/install
+define Package/gateway-enabler/install
 	$(INSTALL_DIR) $(1)/etc
 	$(INSTALL_DIR) $(1)/etc/init.d/
 	$(INSTALL_BIN) ./files/gateway-enabler.init $(1)/etc/init.d/gateway-enabler
 endef
 
-$(eval $(call BuildPackage,webcam-enabler))
+$(eval $(call BuildPackage,gateway-enabler))
