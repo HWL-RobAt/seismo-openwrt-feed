@@ -4,7 +4,6 @@ START=40
 STOP=10
 
 start() {
-	# enable uci settings
 	if[ "$(uci get mjpg-streamer.core.enabled)" = "0"]
 	then
 		uci set mjpg-streamer.core.enabled=1
@@ -13,14 +12,7 @@ start() {
 		uci commit
 	fi
 
-	# enable hotplug for usb
 	sed 's/\^usb\$/usb\$/'< /etc/hotplug2.rules 
-
-	# unload usb2 kernel module
-	if [ "$( lsmod | grep ehci_hcd)" != "" ]
-	then
-		rmmod ehci_hcd
-	fi
 }
 
 stop() {
