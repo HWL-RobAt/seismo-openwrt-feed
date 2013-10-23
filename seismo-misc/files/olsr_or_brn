@@ -42,10 +42,8 @@ get_ip_from_mac () {
 setup_wifi0 () {
 
 echo "WIFI0 SETUP:"
-	iw phy $DEV0 interface add ath0 type station
-	#paste the custom ssid into the hostapd config file
-	sed -i "s/ssid=.*/ssid=SeismoTN_$(get_ip_from_mac ath0)/" /etc/hostapd-seismo.conf 
-#	iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0)
+	iw phy $DEV0 interface add ath0 type managed
+	iwconfig ath0 essid SeismoTN_$(get_ip_from_mac ath0)
         ifconfig ath0 192.168.100.1 netmask 255.255.255.0 broadcast 192.168.100.255 
         dnsmasq -l /tmp/dhcp.leases --interface=ath0 -K -F 192.168.100.100,192.168.100.250,255.255.255.0,12h		
 }
@@ -167,7 +165,6 @@ stop () {
         killall olsrd
         killall dnsmasq
         killall hostapd
-	iptables --flush
         iw dev ath0 del
         iw dev ath1 del
 }
