@@ -1,8 +1,0 @@
-#!/bin/sh /etc/rc.common
-# Copyright (C) 2008 OpenWrt.org
-# Somehow priority option in watchdog.conf does not work, so its started with nice and prio -1
-
-START=97
-start() {
-        [ -c /dev/watchdog ] && nice -n -1 watchdog -v
-}
