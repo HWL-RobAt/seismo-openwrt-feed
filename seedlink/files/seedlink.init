@@ -249,7 +249,7 @@ start() {
 }
 
 stop() {
-	killall segment_backupper
+	killall segment_backupper.py
 	killall data-provider
 	killall seedlink
 }
