@@ -64,6 +64,8 @@ define Package/seismo-misc/install
 	$(INSTALL_DIR) $(TOPDIR)/files/etc
 	$(CP) ./files/passwd $(TOPDIR)/files/etc/passwd
 	$(CP) ./files/shadow $(TOPDIR)/files/etc/shadow
+	$(INSTALL_DIR) $(TOPDIR)/files/etc/config
+	$(CP) ./files/fstab $(TOPDIR)/files/etc/config/fstab
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/seismo $(1)/etc/config/seismo
 	$(CP) ./files/hostapd-seismo.conf $(1)/etc/hostapd-seismo.conf
