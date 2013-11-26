@@ -38,6 +38,67 @@ get_sector(){
 				echo ${P_END[(($cnt-1))]}
 }
 
+chk_fs(){
+
+			echo "Starting Filesystemcheck..."
+			if [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda2" ]
+			then
+				DEV="/dev/sda2"
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
+				sync
+				mount -o remount,ro $DEV /
+				e2fsck -p $DEV
+				mount -o remount,$FLAG $DEV /
+				
+				if [ "$(mount | grep /dev/sda3)" != "" ];
+				then
+					umount /dev/sda3
+					e2fsck -p /dev/sda3
+				else
+					e2fsck -p /dev/sda3
+				fi
+				
+				if [ "$(mount | grep /dev/sda4)" != "" ];
+				then
+					FLAG=$(mount | grep /dev/sda4 | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
+					mount -o remount,ro /dev/sda4 /data
+					e2fsck -p /dev/sda4
+					mount -o remount,$FLAG /dev/sda4 /data
+				else
+					e2fsck -p /dev/sda4
+				fi
+			elif [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda3" ]
+			then
+				DEV="/dev/sda3"
+				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
+				sync
+				mount -o remount,ro $DEV /
+				e2fsck -p $DEV
+				mount -o remount,$FLAG $DEV /
+					
+				if [ "$(mount | grep /dev/sda2)" != "" ];
+				then
+					umount /dev/sda2
+					e2fsck -p /dev/sda2
+				else
+					e2fsck -p /dev/sda2
+				fi
+				
+				if [ "$(mount | grep /dev/sda4)" != "" ];
+				then
+					FLAG=$(mount | grep /dev/sda4 | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
+					mount -o remount,ro /dev/sda4 /data
+					e2fsck -p /dev/sda4
+					mount -o remount,$FLAG /dev/sda4 /data
+				else
+					e2fsck -p /dev/sda4
+				fi
+			fi
+			echo "...Filesystems checked."
+
+
+}
+
 
  # Are we running with CF card (check for /dev/sda) ?
     if [ -b /dev/sda ] 
@@ -94,50 +155,23 @@ reboot
 
 	else
 		DATA_FS_4=$( $BLKID | awk '/sda4/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
-		DATA_FS_3=$( $BLKID | awk '/sda3/ {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')
-		if [ "$DATA_FS_3" != "ext3" ]
-		then
-			echo "mount_data_partition: Creating Ext4 on /dev/sda3"
-			mkfs.ext3 /dev/sda3
-		else
-			echo "already ext3 on /dev/sda3"
-		fi
-			
-		if [ "$DATA_FS_4" != "ext3" ]
+					
+		if [ "$DATA_FS_4" != "ext4" ]
 		then
 		#logger -t mount_data_partition Creating Ext4 on /dev/sda4a
 			echo "mount_data_partition: Creating Ext4 on /dev/sda4"
-			mkfs.ext3 /dev/sda4
+			mkfs.ext4 /dev/sda4
 			echo "mount_data_partition: Mounting /dev/sda4 to /data"
 		        mkdir -p /data
-		        mount -t ext3 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+		        mount -t ext4 -o rw,noatime,errors=remount-ro /dev/sda4 /data
 		else
-		        #logger -t mount_data_partition Mounting /dev/sda4
+		  #logger -t mount_data_partition Mounting /dev/sda4
 			#maybe first remount ro to perform fsck(?)
-			echo "Starting Filesystemcheck..."
-			if [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda2" ]
-			then
-				DEV="/dev/sda2"
-				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
-				mount -o remount,ro $DEV /
-				e2fsck -p $DEV
-				mount -o remount,$FLAG $DEV /
-				e2fsck -p /dev/sda3
-				e2fsck -p /dev/sda4
-			elif [ "$(ls -lisa /dev/root | awk '{print $NF}')" = "/dev/sda3" ]
-			then
-				DEV="/dev/sda3"
-				FLAG=$(mount | grep $DEV | awk '{sub(/\(/,"",$6);sub(/\)/,"",$6);print $6}')
-				mount -o remount,ro $DEV /
-				e2fsck -p $DEV
-				mount -o remount,$FLAG $DEV /
-				e2fsck -p /dev/sda2
-				e2fsck -p /dev/sda4
-			fi
-			echo "...Filesystems checked."
+			
+			chk_fs
 			echo "mount_data_partition: Mounting /dev/sda4 to /data"
 	        	mkdir -p /data
-			mount -t ext3 -o rw,noatime,errors=remount-ro /dev/sda4 /data
+			mount -t ext4 -o rw,noatime,errors=remount-ro /dev/sda4 /data
 			if [ $? == 0 ] 
 			then 	
 				killall syslogd
@@ -154,4 +188,4 @@ reboot
 
 		fi
 	fi
-   fi
+fi
