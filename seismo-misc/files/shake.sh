@@ -113,9 +113,11 @@ measure(){
 				it=1	
 				while [ $it -le $NR ];
 				do
-					/etc/init.d/seedlink start 
+					echo "5 sec until Recording number ${it}..."
+					sleep 5
+					data-provider -l noise_recorder.so -d 2 --no-wait --syslog &
 					sleep $DURATION
-					/etc/init.d/seedlink stop &> /dev/null
+					killall data-provider
 					echo ""
 					for n in $(ls $IN_DIR/*.raw)
 					do
@@ -128,7 +130,7 @@ measure(){
 									fi
 							done
 					done
-					mv $new_rec $OUT_DIR/"${IP}_""${HZ}""${DURATION}s_""$(date +%d.%m.%y_%R:%S)".raw 
+					mv $new_rec $OUT_DIR/"${IP}_""${HZ}_""${DURATION}s_""POS${it}_""$(date +%d.%m.%y_%R:%S)".raw 
 					echo -e "Finished Recording number $it.\n" 
 					let "it+=1"
 				done
@@ -149,7 +151,7 @@ conf_info
 if [ -e /etc/init.d/seedlink ]
 	then	
 				echo -e "Initially any running Seedlink Instance has been...\n"
-				/etc/init.d/seedlink stop &> /dev/null				
+				/etc/init.d/seedlink stop &> /dev/null
 				echo -e "\n\n"
 	else
 				echo "missing init-script: /etc/init.d/seedlink"

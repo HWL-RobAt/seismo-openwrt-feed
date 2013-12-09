@@ -84,7 +84,7 @@ define Package/seismo-misc/install
 	$(INSTALL_BIN) ./files/scp-resume.sh $(1)/usr/bin/scp-resume.sh
 	$(INSTALL_BIN) ./files/udp_sender.py $(1)/usr/bin/udp_sender.py
 	$(INSTALL_BIN) ./files/udp_receiver.py $(1)/usr/bin/udp_receiver.py
-	$(INSTALL_BIN) ./files/shake.sh $(1)/usr/bin/shake.sh
+	$(INSTALL_BIN) ./files/shake.sh $(1)/usr/bin/shake
 
 	
 endef
