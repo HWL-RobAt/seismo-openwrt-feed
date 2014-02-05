@@ -64,6 +64,8 @@ define Package/seismo-misc/install
 	$(INSTALL_DIR) $(TOPDIR)/files/etc
 	$(CP) ./files/passwd $(TOPDIR)/files/etc/passwd
 	$(CP) ./files/shadow $(TOPDIR)/files/etc/shadow
+	$(INSTALL_DIR) $(TOPDIR)/files/etc/config
+	$(CP) ./files/fstab $(TOPDIR)/files/etc/config/fstab
 	$(INSTALL_DIR) $(1)/etc/config
 	$(CP) ./files/seismo $(1)/etc/config/seismo
 	$(CP) ./files/hostapd-seismo.conf $(1)/etc/hostapd-seismo.conf
@@ -82,7 +84,7 @@ define Package/seismo-misc/install
 	$(INSTALL_BIN) ./files/scp-resume.sh $(1)/usr/bin/scp-resume.sh
 	$(INSTALL_BIN) ./files/udp_sender.py $(1)/usr/bin/udp_sender.py
 	$(INSTALL_BIN) ./files/udp_receiver.py $(1)/usr/bin/udp_receiver.py
-	$(INSTALL_BIN) ./files/shake.sh $(1)/usr/bin/shake.sh
+	$(INSTALL_BIN) ./files/shake.sh $(1)/usr/bin/shake
 
 	
 endef

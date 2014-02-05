@@ -7,10 +7,13 @@
 #	./package/feeds/seismo/sysupdate/files/sysupdate createpkg
 #	
 #
+# If the ROOTFSTYPE isn't ext4 please change the following line.  
+ROOTFSTYPE="ext4"
+
+ROOTFS="openwrt-x86-alix2-rootfs-"$ROOTFSTYPE".img"
+KERNEL="openwrt-x86-alix2-vmlinuz"
 
 WRT_BIN_DIR="./bin/x86"
-ROOTFS="openwrt-x86-alix2-rootfs.tar.gz"
-KERNEL="openwrt-x86-alix2-vmlinuz"
 SYSUPDATE_DIR=$WRT_BIN_DIR/sysupdate
 ECHO=$(which echo)
 LS=$(which ls)
@@ -27,9 +30,19 @@ CP=$(which cp)
 SED=$(which sed)
 MV=$(which mv)
 BLKID=$(which blkid)
-MKFSEXT4=$(which mkfs.ext4)
 E2FSCK=$(which e2fsck)
-BIN_LIST="ECHO LS GREP RM MOUNT AWK UMOUNT MD5SUM TOUCH TAR WC CP SED MV BLKID MKFSEXT4 E2FSCK"
+GUNZIP=$(which gunzip)
+BIN_LIST="ECHO LS GREP RM MOUNT AWK UMOUNT MD5SUM TOUCH TAR WC CP SED MV BLKID E2FSCK GUNZIP"
+
+
+cmd_succ()
+	{
+		if [ $1 -ne 0 ]
+		then
+			echo "Command failed! Aborting!"
+			exit 2
+		fi
+	}
 
 chk_sys()
  {
@@ -54,19 +67,13 @@ chk_sys()
 	then
 		rm /data/menu.lst*
 	fi
-	if [ -f /mnt/sysupdate_root/$ROOTFS ]
+	if [ "$(ls -lisa /data | grep openwrt-x86 | wc -l)" -gt "0" ]
 	then
-		rm /mnt/sysupdate_root/$ROOTFS
+		rm /data/openwrt-x86*
 	fi
-	if [ -f /mnt/sysupdate_root/$KERNEL ]
-	then
-		rm /mnt/sysupdate_root/$KERNEL
-	fi
-	if [ -f /mnt/sysupdate_root/md5sums.src ]
-	then
-		rm /mnt/sysupdate_root/md5sums.src
-	fi
+
 	cd /data
+	
 	if [ -d /mnt/sysupdate_boot ]
 	then
 		if [ "$(mount | grep /mnt/sysupdate_boot)" != "" ]
@@ -77,6 +84,7 @@ chk_sys()
 				if [ "$?" != "0" ]
 				then
 					echo "umounting /mnt/sysupdate_boot failed"
+					exit 2
 				fi
 			done
 		fi
@@ -93,6 +101,7 @@ chk_sys()
 				if [ "$?" != "0" ]
 				then
 					echo "umounting /mnt/sysupdate_root failed"
+					exit 2
 				fi
 			done
 		fi
@@ -103,7 +112,7 @@ chk_sys()
 
 case $1 in 
 
-	createpkg) 	if [ -s $WRT_BIN_DIR/$ROOTFS -a -s $WRT_BIN_DIR/$KERNEL ]
+	createpkg) 	if [ -s $WRT_BIN_DIR/${ROOTFS}.gz -a -s $WRT_BIN_DIR/$KERNEL ]
 				then
 					if [ ! -d "$SYSUPDATE_DIR" ];
 					then
@@ -113,6 +122,7 @@ case $1 in
 						rm -rf $SYSUPDATE_DIR/*
 					fi
 					cd $WRT_BIN_DIR
+					gunzip ${ROOTFS}.gz
 					echo "generating original md5sums...\c"
 					MD5_ROOTFS=$(md5sum $ROOTFS)
 					MD5_KERNEL=$(md5sum $KERNEL)
@@ -187,11 +197,12 @@ case $1 in
 					# if there wasn't any sysupdate before this one we find the default kernel with its standard name vmlinuz in the boot #
 					# directory. so we have to prepare the menu.lst for further usage and rename the kernel accordingly										#
 					#######################################################################################################################
-					if [ $? -eq 0 ]
+					if [ $? -eq 0 ];
 					then	
 						echo "done"
 					else
 						echo "FAILED"
+						exit 2
 					fi
 					# create copy of menu.lst with entry numbers like "# entry 0" before every line starting with "title"
 					if [ "$(grep -e#\ entry\ .$ /mnt/sysupdate_boot/boot/grub/menu.lst | wc -l)" -eq "0" ];
@@ -202,7 +213,7 @@ case $1 in
 					fi
 					
 					#remove every failsafe entry from menu.lst.tmp
-				        if [ "$(grep -efailsafe /data/menu.lst.tmp | wc -l)" -ne "0" ];
+				  if [ "$(grep -efailsafe /data/menu.lst.tmp | wc -l)" -ne "0" ];
 					then	
 						sed 's/[ \(]failsafe[^ \t]\+//' /data/menu.lst.tmp > /data/menu.lst.out 
 					else
@@ -243,7 +254,7 @@ case $1 in
 					fi
 					
 					#set the right root devices in kernel lines
-					awk -vige=$INACTIVE_GRUB_ENTRY -virp=$INACTIVE_ROOT_PART '{if($0 == "# entry "ige){print $0; getline; print $0; getline;print $0; getline; sub(/root=\/dev\/sda./,"root="irp,$0); print $0} else print $0}' /data/menu.lst.tmp > /data/menu.lst
+					awk -vige=$INACTIVE_GRUB_ENTRY -virp=$INACTIVE_ROOT_PART -vfstype=$ROOTFSTYPE '{if($0 == "# entry "ige){print $0; getline; print $0; getline;print $0; getline; sub(/root=\/dev\/sda./,"root="irp,$0); sub(/rootfstype=\ext./,"rootfstype="fstype,$0); print $0} else print $0}' /data/menu.lst.tmp > /data/menu.lst
 
 					##################################################################################################################################################
 					# menu.lst modification is now finished. the new menu.lst is now found under /data/menu.lst and remains there until the rest of the installation #
@@ -252,40 +263,34 @@ case $1 in
 					
 
 
-
-					#first check Filesystemtype of the unused partition	
-					if [ "$(/sbin/blkid | awk -vinactive=$INACTIVE_ROOT_PART '($0 ~ inactive) {sub(/TYPE=\"/,"",$3); sub(/\"/,"",$3); print $3}')" != "ext4" ];
+					if [ "$(mount | grep $INACTIVE_ROOT_PART)" != "" ]
+					then 
+						umount $INACTIVE_ROOT_PART
+						cmd_succ $?
+					fi
+					
+					echo "Preparing to flash new rootfs to $INACTIVE_ROOT_PART"
+					if [ "$(mount | grep $INACTIVE_ROOT_PART)" == "" ]
 					then
-						echo -e "Filesystem on $INACTIVE_ROOT_PART is not ext4 ... executing \"mkfs.ext4 $INACTIVE_ROOT_PART\"\n"
-						mkfs.ext4 $INACTIVE_ROOT_PART
-					else
-						if [ "$(mount | grep $INACTIVE_ROOT_PART)" != "" ]
-						then 
-							umount $INACTIVE_ROOT_PART
-							e2fsck -p $INACTIVE_ROOT_PART
-						else
-							e2fsck -p $INACTIVE_ROOT_PART
-						fi
-					fi	
-					echo -e "Mounting $INACTIVE_ROOT_PART to /mnt/sysupdate_root...\c"
-					if mount $INACTIVE_ROOT_PART /mnt/sysupdate_root;
-					then
-						echo "DONE"
 					    	cd /data
 						if md5sum -c sysupdate.md5;
 						then
-							cd /mnt/sysupdate_root
 							echo -e "unpacking sysupdate.tar.gz...\c"
-							tar mxzf /data/sysupdate.tar.gz
+							tar xzf /data/sysupdate.tar.gz
+							cmd_succ $?
+							sync
 							echo "DONE"
 
 							if md5sum -c md5sums.src;
 							then	
-								echo -e "md5 correct...unpacking $ROOTFS...\c" 
-								tar mxzf $ROOTFS
+								echo "md5 correct..." 
+								echo -e "Start flashing new RootFS to $INACTIVE_ROOT_PART ...\n\c" 
+								dd if=/data/$ROOTFS of=$INACTIVE_ROOT_PART bs=1024 conv=sync
+								cmd_succ $?
 								echo "DONE"
 								echo -e "copying new kernel to boot-partition...\c"
 								cp $KERNEL /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY
+								cmd_succ $?
 								echo "DONE"
 								# checking the md5sum of the kernel just copied to /mnt/sysupdate_boot/boot/
 								if [ "$(md5sum $KERNEL /mnt/sysupdate_boot/boot/vmlinuz_$INACTIVE_GRUB_ENTRY | awk '{first=$1; getline; if(first == $1) print "1"; else print "0"}')" -eq "1" ];
@@ -294,6 +299,7 @@ case $1 in
 									echo -e "copying new menu.lst (backup in ./boot/grub/menu.lst.old)...\c"
 									mv /mnt/sysupdate_boot/boot/grub/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst.old	
 									cp /data/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst
+									cmd_succ $?
 									echo "DONE"
 									echo -e "start cleaning up...\c"
 									cleanup
@@ -336,7 +342,8 @@ case $1 in
 		fi
 
 		if mount /dev/sda1 /mnt/sysupdate_boot;
-		then	
+		then
+			cmd_succ $?
 			DEFAULT_GRUB_ENTRY=$(awk '/^default/{print $2}' /mnt/sysupdate_boot/boot/grub/menu.lst)
 			ACTIVE_PART=$(ls -lisa /dev/root | awk '{print $NF}')
 			TMP=$(grep "# entry" /mnt/sysupdate_boot/boot/grub/menu.lst | wc -l)
@@ -349,11 +356,15 @@ case $1 in
 					sed -e "s/^default $DEFAULT_GRUB_ENTRY/default $INACTIVE_GRUB_ENTRY/" /mnt/sysupdate_boot/boot/grub/menu.lst > /mnt/sysupdate_boot/boot/grub/menu.lst.new
 					echo "backup menu.lst to menu.lst.old" 
 					cp /mnt/sysupdate_boot/boot/grub/menu.lst /mnt/sysupdate_boot/boot/grub/menu.lst.old
+					cmd_succ $?
 					echo "overwrite menu.lst with menu.lst.new"
 			        	mv /mnt/sysupdate_boot/boot/grub/menu.lst.new /mnt/sysupdate_boot/boot/grub/menu.lst 
+								cmd_succ $?
 					echo "menu.lst modified, changes take effect on reboot"
 					umount /dev/sda1
+					cmd_succ $?
 					rm -r /mnt/sysupdate_boot
+					cmd_succ $?
 				else
 					echo "New System already activated. Use 'sysupdate deactivate' to keep current system active."
 					cleanup
@@ -416,6 +427,6 @@ case $1 in
 chk_sys		    ;;
 
  
- esac
+esac
 
 
