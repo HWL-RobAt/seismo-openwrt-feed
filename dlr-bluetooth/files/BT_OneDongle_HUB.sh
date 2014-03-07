@@ -7,12 +7,10 @@
 # data to a remote server.
 
 # author        Oliver Zimmer <Oliver.Zimmer@dlr.de>
-# date          Jan 2, 2014
+# date          Feb 19, 2014
 
 
 # set -E -o pipefail -o errexit
-
-blubNr=999
 
 
 loop_inq() {
@@ -38,7 +36,7 @@ filter() {
 			# $12 mac
 			# $18 bt_class
 			# $20 rssi
-			echo $blubNr\;$(date --date="${arr[0]} ${arr[1]%.*}" +%s).${arr[1]#*.}\;${arr[12]}\;${arr[18]#*0x}\;${arr[20]}
+			echo $(date --date="${arr[0]} ${arr[1]%.*}" +%s).${arr[1]#*.}\;${arr[12]}\;${arr[18]#*0x}\;${arr[20]}
 		fi
 	done
 }
@@ -49,9 +47,8 @@ ip=$(ifconfig ath1  | grep inet | cut -d :  -f 2 | cut -d ' ' -f 1)
 
 cat <<EOF > config.xml
 <?xml version="1.0" standalone="no"?>
-<!-- dummy ID, eine richtige ID ist noch nicht reserviert -->
 <config deviceid="HUB/BT/$ip">
-	<module>
+	<module src="file:bam.jar">
 		<!-- teile dem Modul mit, dass der Knoten stationär ist -->
 		<properties>
 			is_mobile=false
@@ -62,12 +59,11 @@ cat <<EOF > config.xml
 			<!-- feste Position -->
 			<fixed lat="$latitude" lon="$longitude" />
 		</location>
-		<sensor>
+		<sensor type="bluetooth/active">
 			<device>
 				<!-- lese Sensor 1 von STDIN -->
 				<resource res="-" />
 				<struct-csv delimiter=";">
-					<value type="id" />
 					<value type="time_seconds" />
 					<value type="mac" />
 					<value type="bt_class" />
@@ -85,15 +81,25 @@ EOF
 
 loop_inq & inq_pid=$!
 {
-	hcidump -i hci0 -t -V | \
-	filter | \
-	jamvm -jar jblub.jar -v --force | \
-	jamvm -jar upload.jar --debug --threshold 200kB --interval 1m --out 195.37.11.173:944
+
+	hcidump -i hci0 -t -V \
+	| filter \
+	| jamvm -jar jblub.jar \
+		-v \
+		--force \
+	| jamvm -jar upload.jar \
+		--debug \
+		--threshold 0 \
+		--interval 1m \
+		--repeat 10 \
+		--exec-on-timeout "/etc/init.d/dlr-bluetooth restart" \
+		--out 195.37.11.173:944
 	echo "Processing chain terminated"
 	kill -n 9 $inq_pid;
+
 } 2>&1 | logger -t DLR_BT & chain_pid=$!
 
 logger -t DLR_BT "Processing chain started"
 
-trap "{ kill -9 $inq_pid; kill -9 $chain_pid; } 2> /dev/null" EXIT
+trap "{ logger -t DLR_BT 'received kill sig'; kill -9 $inq_pid; kill -9 $chain_pid; } 2> /dev/null" EXIT TERM
 wait $inq_pid

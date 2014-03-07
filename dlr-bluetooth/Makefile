@@ -31,9 +31,9 @@ endef
 
 define Package/dlr-bluetooth/install
 	$(INSTALL_DIR) $(1)/usr/bin/dlr-bluetooth
+	$(CP) ./files/jblub.jar $(1)/usr/bin/dlr-bluetooth/bam.jar
 	$(CP) ./files/jblub.jar $(1)/usr/bin/dlr-bluetooth/jblub.jar
 	$(CP) ./files/upload.jar $(1)/usr/bin/dlr-bluetooth/upload.jar
-	$(CP) ./files/config.xml $(1)/usr/bin/dlr-bluetooth/config.xml
 	$(INSTALL_BIN) ./files/BT_OneDongle_HUB.sh $(1)/usr/bin/dlr-bluetooth/BT_OneDongle_HUB.sh
 	
 	$(INSTALL_DIR) $(1)/etc/init.d

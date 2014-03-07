@@ -1,7 +1,8 @@
 #!/bin/sh /etc/rc.common
 
 START=99
- 	
+STOP=99
+
 start() {
 	cd /usr/bin/dlr-bluetooth
 	for script in *.sh; do
@@ -9,3 +10,17 @@ start() {
 		./$script &
 	done
 }                 
+
+stop() {
+	rkill() {
+		for pid in $(pgrep -P $1); do
+			rkill $pid
+			kill -9 $pid
+		done
+	}
+	cd /usr/bin/dlr-bluetooth
+	for pid in $(cat .pid); do
+		rkill $pid
+	done
+	rm -f .pid
+}
