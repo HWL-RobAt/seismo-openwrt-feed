@@ -54,10 +54,10 @@ write_seedlink_ini() {
 
 	# Channel permutation depending on how the device is mounted
 	MOUNTED=$(uci get seismo.installation.mounted)
-	if [ "$MOUNTED" == "horizontal" ]; then 
+	if [ "$MOUNTED" == "biggest_side" ]; then 
     		PERM="1023"
 
-	elif [ "$MOUNTED" == "vertical" ]; then 
+	elif [ "$MOUNTED" == "medium_side" ]; then 
     		PERM="1203"
 	else
     		PERM="0123"
