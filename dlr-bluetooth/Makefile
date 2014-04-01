@@ -7,7 +7,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=dlr-bluetooth
-PKG_VERSION:=0.2
+PKG_VERSION:=0.3
 PKG_RELEASE:=1
 
 include $(INCLUDE_DIR)/package.mk
@@ -31,7 +31,7 @@ endef
 
 define Package/dlr-bluetooth/install
 	$(INSTALL_DIR) $(1)/usr/bin/dlr-bluetooth
-	$(CP) ./files/jblub.jar $(1)/usr/bin/dlr-bluetooth/bam.jar
+	$(CP) ./files/bam.jar $(1)/usr/bin/dlr-bluetooth/bam.jar
 	$(CP) ./files/jblub.jar $(1)/usr/bin/dlr-bluetooth/jblub.jar
 	$(CP) ./files/upload.jar $(1)/usr/bin/dlr-bluetooth/upload.jar
 	$(INSTALL_BIN) ./files/BT_OneDongle_HUB.sh $(1)/usr/bin/dlr-bluetooth/BT_OneDongle_HUB.sh
@@ -39,5 +39,7 @@ define Package/dlr-bluetooth/install
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/dlr-bluetooth.init $(1)/etc/init.d/dlr-bluetooth
 endef
+
+# /etc/init.d/dlr-bluetooth enable
 
 $(eval $(call BuildPackage,dlr-bluetooth))
