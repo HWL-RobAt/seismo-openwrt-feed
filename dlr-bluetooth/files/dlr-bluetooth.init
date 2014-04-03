@@ -12,8 +12,8 @@ start() {
 		./$script &
 		echo $! >> .pid
 	done
-}
-   
+}   
+
 stop() {
 	rkill() {
 		for pid in $(pgrep -P $1); do
@@ -25,6 +25,6 @@ stop() {
 	[ -r .pid ] || exit 0
 	for pid in $(cat .pid); do
 		rkill $pid
-	done	
+	done
 	rm -f .pid
 }

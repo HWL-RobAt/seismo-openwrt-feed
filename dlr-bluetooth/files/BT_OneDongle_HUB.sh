@@ -14,6 +14,7 @@
 
 
 loop_inq() {
+	hciconfig hci0 up
 	hciconfig hci0 inqmode 1
 	sleep 2
 
