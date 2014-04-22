@@ -59,8 +59,11 @@ write_seedlink_ini() {
 
 	elif [ "$MOUNTED" == "medium_side" ]; then 
     		PERM="1203"
+	
+	elif [ "$MOUNTED" == "smallest_side" ]; then 
+   		PERM="2013"
 	else
-    		PERM="0123"
+		PERM="0123"
 	fi	
 
 	# Config line for running the data-provider from a file with seedlink and ew_plugin:
