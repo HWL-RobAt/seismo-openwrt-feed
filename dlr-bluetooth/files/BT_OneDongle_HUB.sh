@@ -14,6 +14,7 @@
 
 
 loop_inq() {
+	hciconfig hci0 up
 	hciconfig hci0 inqmode 1
 	sleep 2
 
@@ -51,7 +52,8 @@ cat <<EOF > config.xml
 	<module src="file:bam.jar">
 		<!-- teile dem Modul mit, dass der Knoten stationär ist -->
 		<properties>
-			is_mobile=false
+			module_is_mobile=false
+			module_delta_stop_ms=60000
 		</properties>
 	</module>
 	<input>

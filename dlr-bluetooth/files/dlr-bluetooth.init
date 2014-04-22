@@ -5,11 +5,14 @@ STOP=99
 
 start() {
 	cd /usr/bin/dlr-bluetooth
+	# wipe old pids of scripts
+	> .pid
 	for script in *.sh; do
-		logger "starting $script"
+		logger -t DLR_BT "starting $PWD/$script"
 		./$script &
+		echo $! >> .pid
 	done
-}                 
+}   
 
 stop() {
 	rkill() {
@@ -19,6 +22,7 @@ stop() {
 		done
 	}
 	cd /usr/bin/dlr-bluetooth
+	[ -r .pid ] || exit 0
 	for pid in $(cat .pid); do
 		rkill $pid
 	done
