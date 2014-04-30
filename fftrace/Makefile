@@ -12,7 +12,7 @@ PKG_VERSION:=svn2008-04-09
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
-PKG_SOURCE_URL:=http://www2.informatik.hu-berlin.de/~warncke/seismo/sources/
+PKG_SOURCE_URL:=http://www2.informatik.hu-berlin.de/~warncke/
 PKG_MD5SUM:=25b48de293a26309bf198d455b172d34
 
 PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
