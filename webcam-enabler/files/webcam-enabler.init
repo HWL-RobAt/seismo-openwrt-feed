@@ -8,7 +8,7 @@ start() {
         if [ "$(uci get mjpg-streamer.core.enabled)" = "0" ]
         then
                 uci set mjpg-streamer.core.enabled=1
-                uci set mjpg-streamer.core.fps=30
+                uci set mjpg-streamer.core.fps=5
                 uci set mjpg-streamer.core.port=8081
                 uci commit
         fi
