@@ -10,7 +10,8 @@ include $(TOPDIR)/rules.mk
 
 PKG_BRANCH:=trunkv2
 PKG_SOURCE_URL:=https://samtrac.informatik.hu-berlin.de/svn/data-provider/$(PKG_BRANCH)
-PKG_REV:=$(shell LC_ALL=C svn info ${PKG_SOURCE_URL} | sed -ne's/^Last Changed Rev: //p')
+PKG_REV:=r118
+#PKG_REV:=$(shell LC_ALL=C svn info ${PKG_SOURCE_URL} | sed -ne's/^Last Changed Rev: //p')
 
 PKG_NAME:=data-provider
 PKG_VERSION:=0.1+svn$(PKG_REV)

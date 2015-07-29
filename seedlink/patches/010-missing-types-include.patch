@@ -1,0 +1,11 @@
+diff -Naur a/acquisition/src/libslutils/utils.h b/acquisition/src/libslutils/utils.h
+--- a/acquisition/src/libslutils/utils.h	2005-07-26 21:28:46.000000000 +0200
++++ b/acquisition/src/libslutils/utils.h	2015-07-24 09:40:59.373910207 +0200
+@@ -23,6 +23,7 @@
+ #include <cstring>
+ #include <cerrno>
+ 
++#include <sys/types.h>
+ #include <sys/time.h>
+ 
+ namespace Utilities_private {

@@ -2,9 +2,10 @@
 *** data-provider ***
 Path: trunk
 URL: https://samtrac.informatik.hu-berlin.de/svn/data-provider/trunk
+Relative URL: ^/trunk
 Repository Root: https://samtrac.informatik.hu-berlin.de/svn/data-provider
 Repository UUID: cebf08f7-f0e7-4d35-a477-a60bbc62ad47
-Revision: 118
+Revision: 125
 Node Kind: directory
 Last Changed Author: sombrutz
 Last Changed Rev: 100
@@ -13,6 +14,7 @@ Last Changed Date: 2011-02-07 17:49:49 +0100 (Mon, 07 Feb 2011)
 *** network-status-service ***
 Path: trunk
 URL: https://samtrac.informatik.hu-berlin.de/svn/network-status-service/trunk
+Relative URL: ^/trunk
 Repository Root: https://samtrac.informatik.hu-berlin.de/svn/network-status-service
 Repository UUID: 75bea1cd-83ff-4576-aacd-6eaa17f30db4
 Revision: 60
